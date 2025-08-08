@@ -1,0 +1,8 @@
+.vscode/
+.env
+go.sum
+__debug*
+*.exe
+.VScode*
+user/*
+go-cloud-disk*
