@@ -8,15 +8,15 @@ import (
 )
 
 type FileFolder struct {
-	Uuid           string `gorm:"primarykey"`
-	FileFolderName string
-	ParentFolderID string
-	FileStoreID    string
-	OwnerID        string
-	Size           int64
+	Uuid           string `gorm:"primarykey"` // 主键，自动生成
+	FileFolderName string // 文件夹名称
+	ParentFolderID string // 父文件ID，支持层级结构
+	FileStoreID    string // 关联的存储空间
+	OwnerID        string // 所有者
+	Size           int64  // 文件夹大小
 }
 
-// BeforeCreate create uuid before insert database
+// BeforeCreate 在插入数据库前创建uuid
 func (fileFolder *FileFolder) BeforeCreate(tx *gorm.DB) (err error) {
 	if fileFolder.Uuid == "" {
 		fileFolder.Uuid = uuid.New().String()
@@ -24,14 +24,14 @@ func (fileFolder *FileFolder) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-// CreateBaseFileFolder create a user fileFolder with fileStoreId and ownerId,
-// and return it uuid or err
+// CreateBaseFileFolder 为用户创建文件夹，使用fileStoreId和ownerId，
+// 并返回其uuid或错误
 func CreateBaseFileFolder(ownerId string, fileStoreId string) (string, error) {
 	fileStore := FileFolder{
-		FileFolderName: "main",
-		ParentFolderID: "root",
-		FileStoreID:    fileStoreId,
-		OwnerID:        ownerId,
+		FileFolderName: "main",      // 文件夹名称：main（主目录）
+		ParentFolderID: "root",      // 父目录ID：root（表示顶级目录）
+		FileStoreID:    fileStoreId, // 文件存储ID
+		OwnerID:        ownerId,     // 所有者用户ID
 	}
 	if err := DB.Create(&fileStore).Error; err != nil {
 		return "", err
@@ -39,33 +39,34 @@ func CreateBaseFileFolder(ownerId string, fileStoreId string) (string, error) {
 	return fileStore.Uuid, nil
 }
 
-// SubSize sub filefolder size
+// SubSize 减少文件夹大小
 func (fileFolder *FileFolder) SubSize(size int64) error {
 	fileFolder.Size = max(fileFolder.Size-size, 0)
 	return nil
 }
 
-// AddFileFolderSize add filefolder size and add size for parent filefolder
+// AddFileFolderSize 增加文件夹大小并为父文件夹增加大小（事务保证）
 func (fileFolder *FileFolder) AddFileFolderSize(t *gorm.DB, appendSize int64) (err error) {
-	// add size for filefolder
+	// 为文件夹增加大小
 	fileFolder.Size += appendSize
 	parentId := fileFolder.ParentFolderID
 	if err := t.Save(fileFolder).Error; err != nil {
-		return fmt.Errorf("save filefolder err when sub filesize err %v", err)
+		return fmt.Errorf("增加文件大小时保存文件夹出错 %v", err)
 	}
 
-	// add size for parent filefolder
+	// 为父文件夹增加大小（循环处理）
 	for parentId != "root" && parentId != "" {
 		var nowFileFolder FileFolder
 		if err = t.Where("uuid = ?", parentId).Find(&nowFileFolder).Error; err != nil {
-			return fmt.Errorf("find filefolder err when add filesize %v", err)
+			return fmt.Errorf("增加文件大小时查找文件夹出错 %v", err)
 		}
+		// 没有找到父文件夹
 		if nowFileFolder.Uuid == "" {
 			break
 		}
 		nowFileFolder.Size += appendSize
 		if err = t.Save(&nowFileFolder).Error; err != nil {
-			return fmt.Errorf("save filefolder err when add filesize err %v", err)
+			return fmt.Errorf("增加文件大小时保存文件夹出错 %v", err)
 		}
 		parentId = nowFileFolder.ParentFolderID
 	}
@@ -73,28 +74,28 @@ func (fileFolder *FileFolder) AddFileFolderSize(t *gorm.DB, appendSize int64) (e
 	return
 }
 
-// SubFileFolderSize sub filefolder size and sub size for parent filefolder
+// SubFileFolderSize 减少文件夹大小并为父文件夹减少大小（事务保证）
 func (fileFolder *FileFolder) SubFileFolderSize(t *gorm.DB, size int64) (err error) {
-	// sub size for filefolder
+	// 为文件夹减少大小
 	fileFolder.SubSize(size)
 	parentId := fileFolder.ParentFolderID
 
 	if err = t.Save(fileFolder).Error; err != nil {
-		return fmt.Errorf("save filefolder err when sub filesize err %v", err)
+		return fmt.Errorf("减少文件大小时保存文件夹出错 %v", err)
 	}
 
-	// sub size for parent filefolder
+	// 为父文件夹减少大小
 	for parentId != "root" && parentId != "" {
 		var nowFileFolder FileFolder
 		if err = t.Where("uuid = ?", parentId).Find(&nowFileFolder).Error; err != nil {
-			return fmt.Errorf("find filefolder err when sub filesize %v", err)
+			return fmt.Errorf("减少文件大小时查找文件夹出错 %v", err)
 		}
 		if nowFileFolder.Uuid == "" {
 			break
 		}
 		nowFileFolder.SubSize(size)
 		if err = t.Save(&nowFileFolder).Error; err != nil {
-			return fmt.Errorf("save filefolder err when sub filesize err %v", err)
+			return fmt.Errorf("减少文件大小时保存文件夹出错 %v", err)
 		}
 		parentId = nowFileFolder.ParentFolderID
 	}

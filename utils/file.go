@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// FastBuildFileName 快速构建文件名，将文件名和文件后缀拼接
 func FastBuildFileName(fileName string, filePostfix string) string {
 	var res strings.Builder
 	res.Write([]byte(fileName))
@@ -17,6 +18,7 @@ func FastBuildFileName(fileName string, filePostfix string) string {
 	return res.String()
 }
 
+// FastBuildString 快速构建字符串，将多个字符串拼接
 func FastBuildString(str ...string) string {
 	var res strings.Builder
 	for _, s := range str {
@@ -25,7 +27,7 @@ func FastBuildString(str ...string) string {
 	return res.String()
 }
 
-// GetFileMD5 get file md5 code
+// GetFileMD5 获取文件的MD5校验码
 func GetFileMD5(filePath string) (string, error) {
 	file, err := os.Open(filePath)
 	defer func() {
@@ -35,15 +37,14 @@ func GetFileMD5(filePath string) (string, error) {
 		return "", err
 	}
 	hash := md5.New()
-	// add extend name to md5 calculate because md5 caculate will get same
-	// md5 code in file have same content and diff extented name
+	// 将扩展名添加到MD5计算中，因为MD5计算会对内容相同但扩展名不同的文件产生相同的MD5码
 	ext := path.Ext(file.Name())
 	hash.Write([]byte(ext))
 	_, _ = io.Copy(hash, file)
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-// splitFilename split file.filename to filename and extend name
+// SplitFilename 分割文件名，将file.filename拆分为文件名和扩展名
 func SplitFilename(str string) (filename string, extend string) {
 	for i := len(str) - 1; i >= 0 && str[i] != '/'; i-- {
 		if str[i] == '.' {

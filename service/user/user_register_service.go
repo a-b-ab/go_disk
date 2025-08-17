@@ -3,10 +3,10 @@ package user
 import (
 	"context"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/cache"
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
+	"go-cloud-disk/cache"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils"
 )
 
 type UserRegisterService struct {
@@ -21,39 +21,39 @@ type registerResponse struct {
 	serializer.User
 }
 
-// vaild check if regiser info correct
+// vaild 检查注册信息是否正确
 func (service *UserRegisterService) vaild() *serializer.Response {
 	if service.Code != cache.RedisClient.Get(context.Background(), cache.EmailCodeKey(service.UserName)).Val() {
 		return &serializer.Response{
 			Code: serializer.CodeParamsError,
-			Msg:  "Code can't matched",
+			Msg:  "验证码不正确",
 		}
 	}
-	// check nickname
+	// 检查昵称
 	count := int64(0)
 	model.DB.Model(&model.User{}).Where("nick_name = ?", service.NickName).Count(&count)
 	if count > 0 {
 		return &serializer.Response{
 			Code: serializer.CodeParamsError,
-			Msg:  "Nickname occupied",
+			Msg:  "昵称已被占用",
 		}
 	}
 
-	// check username
+	// 检查用户名
 	count = 0
 	model.DB.Model(&model.User{}).Where("user_name = ?", service.UserName).Count(&count)
 	if count > 0 {
 		return &serializer.Response{
 			Code: 40001,
-			Msg:  "Username occupied",
+			Msg:  "用户名已被占用",
 		}
 	}
 
 	return nil
 }
 
-// Register check if register info correct. if it correct,
-// register the user to database. Otherwise, return a error message
+// Register 检查注册信息是否正确。如果正确，
+// 将用户注册到数据库。否则，返回错误消息
 func (service *UserRegisterService) Register() serializer.Response {
 	user := model.User{
 		NickName: service.NickName,
@@ -61,25 +61,25 @@ func (service *UserRegisterService) Register() serializer.Response {
 		Status:   model.StatusActiveUser,
 	}
 
-	// check user vaild
+	// 检查用户有效性
 	if err := service.vaild(); err != nil {
 		return *err
 	}
 
-	// encryption password
+	// 加密密码
 	if err := user.SetPassword(service.Password); err != nil {
-		return serializer.Err(serializer.CodeError, "encrypation password err", err)
+		return serializer.Err(serializer.CodeError, "密码加密错误", err)
 	}
 
-	// create user
+	// 创建用户
 	if err := user.CreateUser(); err != nil {
-		return serializer.ParamsErr("create user error", err)
+		return serializer.ParamsErr("创建用户错误", err)
 	}
 
-	// signed jwt token
-	token, err := utils.GenToken("miaoqiu", 24, &user)
+	// 生成JWT令牌
+	token, err := utils.GenToken("crow", 24, &user)
 	if err != nil {
-		return serializer.Err(serializer.CodeError, "token generate error", err)
+		return serializer.Err(serializer.CodeError, "生成token错误", err)
 	}
 
 	return serializer.Success(registerResponse{

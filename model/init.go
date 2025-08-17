@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
-	loglog "github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/conf"
+	loglog "go-cloud-disk/utils/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -14,32 +14,32 @@ import (
 
 var DB *gorm.DB
 
-// Database init mysql connect
+// Database 初始化MySQL连接
 func Database() {
 	connString := conf.MysqlDSN
-	// init gorm log set
+	// 初始化gorm日志设置
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io写入器
 		logger.Config{
-			SlowThreshold:             time.Second,  // Slow SQL threshold
-			LogLevel:                  logger.Error, // Log level
-			IgnoreRecordNotFoundError: true,         // Ignore ErrRecordNotFound error for logger
-			Colorful:                  false,        // Disable color
+			SlowThreshold:             time.Second,  // 慢SQL阈值
+			LogLevel:                  logger.Error, // 日志级别
+			IgnoreRecordNotFoundError: true,         // 忽略ErrRecordNotFound错误日志
+			Colorful:                  false,        // 禁用颜色
 		},
 	)
-	// connect database
+	// 连接数据库
 	db, err := gorm.Open(mysql.Open(connString), &gorm.Config{
 		Logger: newLogger,
 	})
 
 	if connString == "" || err != nil {
-		loglog.Log().Error("mysql lost: %v", err)
+		loglog.Log().Error("MySQL连接失败: %v", err)
 		panic(err)
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		loglog.Log().Error("mysql lost: %v", err)
+		loglog.Log().Error("MySQL连接失败: %v", err)
 		panic(err)
 	}
 

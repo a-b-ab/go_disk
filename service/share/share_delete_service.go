@@ -1,26 +1,27 @@
 package share
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils/logger"
 )
 
-type ShareDeleteService struct {
-}
+// ShareDeleteService 删除分享服务结构体
+type ShareDeleteService struct{}
 
+// DeleteShare 删除用户分享
 func (service *ShareDeleteService) DeleteShare(shareId string, userId string) serializer.Response {
-	// get shares from database
+	// 从数据库获取分享信息
 	var share model.Share
 	if err := model.DB.Where("uuid = ? and owner = ?", shareId, userId).First(&share).Error; err != nil {
-		logger.Log().Error("[ShareDeleteService.DeleteShare] Fail to get share info: ", err)
+		logger.Log().Error("[ShareDeleteService.DeleteShare] 获取分享信息失败: ", err)
 		return serializer.DBErr("", err)
 	}
 
-	// delay double delete, ensure the safe of info
+	// 延迟双重删除，确保信息安全
 	share.DeleteShareInfoInRedis()
 	if err := model.DB.Delete(&share).Error; err != nil {
-		logger.Log().Error("[ShareDeleteService.DeleteShare] Fail to delete share: ", err)
+		logger.Log().Error("[ShareDeleteService.DeleteShare] 删除分享失败: ", err)
 		return serializer.DBErr("", err)
 	}
 	share.DeleteShareInfoInRedis()

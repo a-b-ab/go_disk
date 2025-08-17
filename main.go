@@ -9,16 +9,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/auth"
-	"github.com/ChenMiaoQiu/go-cloud-disk/cache"
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
-	"github.com/ChenMiaoQiu/go-cloud-disk/disk"
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ"
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ/script"
-	"github.com/ChenMiaoQiu/go-cloud-disk/server"
-	"github.com/ChenMiaoQiu/go-cloud-disk/task"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/auth"
+	"go-cloud-disk/cache"
+	"go-cloud-disk/conf"
+	"go-cloud-disk/disk"
+	"go-cloud-disk/model"
+	"go-cloud-disk/rabbitMQ"
+	"go-cloud-disk/rabbitMQ/script"
+	"go-cloud-disk/server"
+	"go-cloud-disk/task"
+	"go-cloud-disk/utils/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,7 +26,6 @@ import (
 func initServer() {
 	// set cloud disk
 	disk.SetBaseCloudDisk()
-
 	// set log
 	logger.BuildLogger()
 

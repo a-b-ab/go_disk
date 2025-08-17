@@ -3,40 +3,42 @@ package task
 import (
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/utils/logger"
 	"github.com/robfig/cron/v3"
 )
 
+// Cron 全局定时任务实例
 var Cron *cron.Cron
 
+// jobFunc 定时任务函数类型
 type jobFunc func() error
 
-// Run runing job and print result that job executed
+// Run 运行任务并打印任务执行结果
 func Run(jobName string, job jobFunc) {
-	// caculate job executed time
+	// 计算任务执行时间
 	from := time.Now().UnixNano()
 	err := job()
 	to := time.Now().UnixNano()
 	if err != nil {
-		logger.Log().Error("%s error: %dms\n err:%v", jobName, (to-from)/int64(time.Millisecond), err)
+		logger.Log().Error("%s 执行失败: %dms\n 错误:%v", jobName, (to-from)/int64(time.Millisecond), err)
 	} else {
-		logger.Log().Info("%s success: %dms\n", jobName, (to-from)/int64(time.Millisecond))
+		logger.Log().Info("%s 执行成功: %dms\n", jobName, (to-from)/int64(time.Millisecond))
 	}
 }
 
-// CronJob start cron job
+// CronJob 启动定时任务
 func CronJob() {
 	if Cron == nil {
 		Cron = cron.New()
 	}
 
-	// every day restart dailyrank in 0:0:0
-	if _, err := Cron.AddFunc("@daily", func() { Run("restart daily rank", RestartDailyRank) }); err != nil {
-		logger.Log().Error("set restart daily rank func err", err)
+	// 每天凌晨0点重置日排行榜
+	if _, err := Cron.AddFunc("@daily", func() { Run("重置日排行榜", RestartDailyRank) }); err != nil {
+		logger.Log().Error("设置重置日排行榜任务失败", err)
 	}
-	// every day delete last day file in 1:0:0
-	if _, err := Cron.AddFunc("0 1 * * *", func() { Run("delete last day file", DeleteLastDayFile) }); err != nil {
-		logger.Log().Error("set delete last day file func err", err)
+	// 每天凌晨1点删除昨日文件
+	if _, err := Cron.AddFunc("0 1 * * *", func() { Run("删除昨日文件", DeleteLastDayFile) }); err != nil {
+		logger.Log().Error("设置删除昨日文件任务失败", err)
 	}
 	Cron.Start()
 }

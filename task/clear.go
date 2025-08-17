@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
+	"go-cloud-disk/utils"
 )
 
 func DeleteLastDayFile() error {

@@ -1,15 +1,17 @@
 package server
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/api"
-	"github.com/ChenMiaoQiu/go-cloud-disk/middleware"
+	"go-cloud-disk/api"
+	"go-cloud-disk/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
 
-	r.MaxMultipartMemory = 8 << 20 // set upload speed
+	// 设置Gin框架处理上传文件时的最大内存限制
+	r.MaxMultipartMemory = 20 << 20 // 20MB
+	// 跨域中间件
 	r.Use(middleware.Cors())
 	r.GET("ping", api.Ping)
 

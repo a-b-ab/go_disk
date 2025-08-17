@@ -13,12 +13,14 @@ import (
 	"github.com/tencentyun/cos-go-sdk-v5"
 )
 
+// TencentCloudDisk 腾讯云对象存储(COS)实现
 type TencentCloudDisk struct {
-	bucketname string
-	secretId   string
-	secretKey  string
+	bucketname string // 存储桶名称
+	secretId   string // 腾讯云SecretId
+	secretKey  string // 腾讯云SecretKey
 }
 
+// getDefaultClient 获取默认的腾讯云COS客户端
 func (cloud *TencentCloudDisk) getDefaultClient() *cos.Client {
 	u, _ := url.Parse(cloud.bucketname)
 	b := &cos.BaseURL{BucketURL: u}
@@ -31,8 +33,8 @@ func (cloud *TencentCloudDisk) getDefaultClient() *cos.Client {
 	return c
 }
 
-// getUploadPresignedURLPresigned use name string to generate presigned url
-// user can use persigned url to upload file
+// getUploadPresignedURLPresigned 使用文件键生成预签名上传URL
+// 用户可以使用预签名URL来上传文件
 func (cloud *TencentCloudDisk) getUploadPresignedURLPresigned(key string) (string, error) {
 	u, _ := url.Parse(cloud.bucketname)
 	b := &cos.BaseURL{BucketURL: u}
@@ -46,12 +48,12 @@ func (cloud *TencentCloudDisk) getUploadPresignedURLPresigned(key string) (strin
 	opt.Query.Add("x-cos-security-token", "<token>")
 	presignedURL, err := c.Object.GetPresignedURL(ctx, http.MethodPut, key, cloud.secretId, cloud.secretKey, time.Minute*15, opt)
 	if err != nil {
-		return "", fmt.Errorf("create getUploadPresignedURLPresigned error %v", err)
+		return "", fmt.Errorf("创建上传预签名URL错误：%v", err)
 	}
 	return presignedURL.String(), nil
 }
 
-// GetUploadPresignedURL use userId, filePath, fileName to generate cloud disk key
+// GetUploadPresignedURL 使用用户ID、文件路径、文件名生成云盘键并获取上传预签名URL
 func (cloud *TencentCloudDisk) GetUploadPresignedURL(userId string, filePath string, fileName string) (string, error) {
 	key := fastBuildKey(userId, filePath, fileName)
 	presignedURL, err := cloud.getUploadPresignedURLPresigned(key)
@@ -61,16 +63,18 @@ func (cloud *TencentCloudDisk) GetUploadPresignedURL(userId string, filePath str
 	return presignedURL, nil
 }
 
+// getDownloadPresignedURL 根据文件键生成下载预签名URL
 func (cloud *TencentCloudDisk) getDownloadPresignedURL(key string) (string, error) {
 	client := cloud.getDefaultClient()
 	ctx := context.Background()
 	presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, cloud.secretId, cloud.secretKey, time.Hour, nil)
 	if err != nil {
-		return "", fmt.Errorf("create download presined url err %v", err)
+		return "", fmt.Errorf("创建下载预签名URL错误：%v", err)
 	}
 	return presignedURL.String(), nil
 }
 
+// GetDownloadPresignedURL 使用用户ID、文件路径、文件名生成云盘键并获取下载预签名URL
 func (cloud *TencentCloudDisk) GetDownloadPresignedURL(userId string, filePath string, fileName string) (string, error) {
 	key := fastBuildKey(userId, filePath, fileName)
 	presignedURL, err := cloud.getDownloadPresignedURL(key)
@@ -80,22 +84,21 @@ func (cloud *TencentCloudDisk) GetDownloadPresignedURL(userId string, filePath s
 	return presignedURL, nil
 }
 
-// getObjectUrl use key to generate objecturl, user can user objectURL to
-// download file or view photo
+// getObjectUrl 使用文件键生成对象URL，用户可以使用此URL下载文件或查看图片
 func (cloud *TencentCloudDisk) getObjectUrl(key string) (str string, err error) {
 	var ok bool
 	if ok, err = cloud.checkObjectIsExist(key); err != nil {
 		return "", err
 	}
 	if !ok {
-		return "", fmt.Errorf("this object don't exist on cloud")
+		return "", fmt.Errorf("此对象在云端不存在")
 	}
 	client := cloud.getDefaultClient()
 	ourl := client.Object.GetObjectURL(key)
 	return ourl.String(), nil
 }
 
-// GetObjectURL use userId, filePath, fileName to generate cloud disk key
+// GetObjectURL 使用用户ID、文件路径、文件名生成云盘键并获取对象URL
 func (cloud *TencentCloudDisk) GetObjectURL(userId string, filePath string, fileName string) (string, error) {
 	key := fastBuildKey(userId, filePath, fileName)
 	objectURL, err := cloud.getObjectUrl(key)
@@ -105,7 +108,7 @@ func (cloud *TencentCloudDisk) GetObjectURL(userId string, filePath string, file
 	return objectURL, nil
 }
 
-// deleteObject delte multi object in cloud
+// deleteObject 在云端删除多个对象
 func (cloud *TencentCloudDisk) deleteObject(keys []string) error {
 	client := cloud.getDefaultClient()
 	obs := []cos.Object{}
@@ -118,12 +121,12 @@ func (cloud *TencentCloudDisk) deleteObject(keys []string) error {
 
 	_, _, err := client.Object.DeleteMulti(context.Background(), opt)
 	if err != nil {
-		return fmt.Errorf("delete object error %v", err)
+		return fmt.Errorf("删除对象错误：%v", err)
 	}
 	return nil
 }
 
-// DeleteObject use items to build keys
+// DeleteObject 使用文件列表构建文件键并删除对象
 func (cloud *TencentCloudDisk) DeleteObject(userId string, filePath string, items []string) error {
 	var keys []string
 	for _, file := range items {
@@ -134,19 +137,20 @@ func (cloud *TencentCloudDisk) DeleteObject(userId string, filePath string, item
 	return err
 }
 
+// deleteFilefold 删除文件夹及其所有内容
 func (cloud *TencentCloudDisk) deleteFilefold(dir string) error {
 	client := cloud.getDefaultClient()
-	var marker string
+	var marker string // 分页查询的游标，标记下一页起点
 	opt := &cos.BucketGetOptions{
 		Prefix:  dir,
 		MaxKeys: 1000,
 	}
 
-	isTruncated := true
+	isTruncated := true // 是否有更多内容需要处理
 	var errInTruncated error
 	for isTruncated {
 		opt.Marker = marker
-		v, _, err := client.Bucket.Get(context.Background(), opt)
+		v, _, err := client.Bucket.Get(context.Background(), opt) // 分页获取对象列表
 		if err != nil {
 			errInTruncated = err
 			break
@@ -170,13 +174,14 @@ func (cloud *TencentCloudDisk) deleteFilefold(dir string) error {
 	return nil
 }
 
-// DeleteObjectFilefolder delete user filefolder in cloud
+// DeleteObjectFilefolder 删除用户在云端的文件夹
 func (cloud *TencentCloudDisk) DeleteObjectFilefolder(userId string, filePath string) error {
 	key := fastBuildKey(userId, filePath, "")
 	err := cloud.deleteFilefold(key)
 	return err
 }
 
+// checkObjectIsExist 检查对象是否存在
 func (cloud *TencentCloudDisk) checkObjectIsExist(key string) (bool, error) {
 	client := cloud.getDefaultClient()
 	ok, err := client.Object.IsExist(context.Background(), key)
@@ -186,14 +191,14 @@ func (cloud *TencentCloudDisk) checkObjectIsExist(key string) (bool, error) {
 	return ok, nil
 }
 
-// IsObjectExist check object is exist
+// IsObjectExist 检查对象是否存在
 func (cloud *TencentCloudDisk) IsObjectExist(userId string, filePath string, fileName string) (bool, error) {
 	key := fastBuildKey(userId, filePath, fileName)
 	ok, err := cloud.checkObjectIsExist(key)
 	return ok, err
 }
 
-// uploadSimpleFile use PutFromFile upload local file to the cloud
+// uploadSimpleFile 使用PutFromFile将本地文件上传到云端
 func (cloud *TencentCloudDisk) uploadSimpleFile(localFilePath string, key string) error {
 	client := cloud.getDefaultClient()
 	opt := &cos.ObjectPutOptions{
@@ -208,20 +213,22 @@ func (cloud *TencentCloudDisk) uploadSimpleFile(localFilePath string, key string
 	return nil
 }
 
-// UploadSimpleFile upload file smaller than 1GB to the cloud
+// todo: 分片上传大文件（支持断点续传）
+
+// UploadSimpleFile 上传小于1GB的文件到云端
 func (cloud *TencentCloudDisk) UploadSimpleFile(localFilePath string, userId string, md5 string, fileSize int64) error {
 	if fileSize/1024/1024/1024 > 1 {
-		return fmt.Errorf("file to big, please use uploadfile")
+		return fmt.Errorf("文件过大，请使用uploadfile方法")
 	}
 
-	// check if the file exists on cloud
+	// 检查文件是否已存在于云端
 	extend := path.Ext(localFilePath)
 	ok, err := cloud.IsObjectExist(userId, "", md5+extend)
 	if err != nil {
 		return err
 	}
 
-	// if not on the cloud, upload file
+	// 如果云端不存在，则上传文件
 	if !ok {
 		key := fastBuildKey(userId, "", md5+extend)
 		if err = cloud.uploadSimpleFile(localFilePath, key); err != nil {
@@ -232,7 +239,7 @@ func (cloud *TencentCloudDisk) UploadSimpleFile(localFilePath string, userId str
 	return nil
 }
 
-// fastBuildKey use userId, filePath, filename to generate key by Builder
+// fastBuildKey 使用用户ID、文件路径、文件名通过Builder生成文件键
 func fastBuildKey(userId string, filePath string, file string) string {
 	var key strings.Builder
 	key.Write([]byte("user/"))
@@ -248,11 +255,11 @@ func fastBuildKey(userId string, filePath string, file string) string {
 	return key.String()
 }
 
-// create new tencent cloud disk
+// NewTencentCloudDisk 创建新的腾讯云盘实例
 func NewTencentCloudDisk() CloudDisk {
 	return &TencentCloudDisk{
 		bucketname: os.Getenv("BUCKET_NAME"),
-		secretId:   os.Getenv("SECRET_ID"),
-		secretKey:  os.Getenv("SECRET_KEY"),
+		secretId:   os.Getenv("BUCKET_SECRET_ID"),
+		secretKey:  os.Getenv("BUCKET_SECRET_KEY"),
 	}
 }

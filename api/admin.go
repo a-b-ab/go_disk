@@ -1,12 +1,13 @@
 package api
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/service/admin"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/service/admin"
+
 	"github.com/gin-gonic/gin"
 )
 
-// UpdateUserAuth change user auth
+// UpdateUserAuth 更改用户权限
 func UpdateUserAuth(c *gin.Context) {
 	var service admin.UserChangeAuthService
 	if err := c.ShouldBind(&service); err != nil {
@@ -19,7 +20,7 @@ func UpdateUserAuth(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// SearchUser search user by uuid or username or status
+// SearchUser 根据uuid、用户名或状态搜索用户
 func SearchUser(c *gin.Context) {
 	var service admin.UserSearchService
 	if err := c.ShouldBind(&service); err != nil {
@@ -31,7 +32,7 @@ func SearchUser(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UserFileStoreUpdate update user filestore
+// UserFileStoreUpdate 更新用户文件存储
 func UserFileStoreUpdate(c *gin.Context) {
 	var service admin.UserFilestoreUpdateService
 	if err := c.ShouldBind(&service); err != nil {
@@ -43,7 +44,7 @@ func UserFileStoreUpdate(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// SearchUser search user by uuid or title or owner
+// SearchShare 根据uuid、标题或拥有者搜索分享
 func SearchShare(c *gin.Context) {
 	var service admin.ShareSearchService
 	if err := c.ShouldBind(&service); err != nil {
@@ -55,7 +56,7 @@ func SearchShare(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// AdminDeleteShare delete share by uuid
+// AdminDeleteShare 根据uuid删除分享
 func AdminDeleteShare(c *gin.Context) {
 	var service admin.ShareDeleteService
 	if err := c.ShouldBind(&service); err != nil {
@@ -68,7 +69,7 @@ func AdminDeleteShare(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// AdminDeleteFile delete all file that have same md5 code in database, don't delete file on cloud
+// AdminDeleteFile 删除数据库中相同md5码的所有文件，不删除云端文件
 func AdminDeleteFile(c *gin.Context) {
 	var service admin.FileDeleteService
 	if err := c.ShouldBind(&service); err != nil {
@@ -82,7 +83,7 @@ func AdminDeleteFile(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// AdminGetFileStoreInfo get filestore info by userid
+// AdminGetFileStoreInfo 根据用户ID获取文件存储信息
 func AdminGetFileStoreInfo(c *gin.Context) {
 	var service admin.FileStoreGetInfoService
 	if err := c.ShouldBind(&service); err != nil {

@@ -5,29 +5,29 @@ import (
 	"log"
 	"os"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
+	"go-cloud-disk/conf"
 )
 
 const (
-	LevelError = iota
-	LevelWarning
-	LevelInformational
-	LevelDebug
+	LevelError         = iota // 错误级别
+	LevelWarning              // 警告级别
+	LevelInformational        // 信息级别
+	LevelDebug                // 调试级别
 )
 
-// logger logger
+// Logger 日志记录器
 type Logger struct {
-	level int
+	level int // 日志级别
 }
 
 var logger *Logger
 
-// Println print log msg with time
+// Println 打印带时间戳的日志消息
 func (ll *Logger) Println(msg string) {
 	log.Println(msg)
 }
 
-// Panic print panic error
+// Panic 打印严重错误并退出程序
 func (ll *Logger) Panic(format string, v ...interface{}) {
 	if LevelError > ll.level {
 		return
@@ -37,7 +37,7 @@ func (ll *Logger) Panic(format string, v ...interface{}) {
 	os.Exit(0)
 }
 
-// Error print err
+// Error 打印错误信息
 func (ll *Logger) Error(format string, v ...interface{}) {
 	if LevelError > ll.level {
 		return
@@ -46,7 +46,7 @@ func (ll *Logger) Error(format string, v ...interface{}) {
 	ll.Println(msg)
 }
 
-// Panic print Warning
+// Warning 打印警告信息
 func (ll *Logger) Warning(format string, v ...interface{}) {
 	if LevelWarning > ll.level {
 		return
@@ -55,7 +55,7 @@ func (ll *Logger) Warning(format string, v ...interface{}) {
 	ll.Println(msg)
 }
 
-// Info print tips info
+// Info 打印提示信息
 func (ll *Logger) Info(format string, v ...interface{}) {
 	if LevelInformational > ll.level {
 		return
@@ -64,7 +64,7 @@ func (ll *Logger) Info(format string, v ...interface{}) {
 	ll.Println(msg)
 }
 
-// Debug print any msg
+// Debug 打印调试信息
 func (ll *Logger) Debug(format string, v ...interface{}) {
 	if LevelDebug > ll.level {
 		return
@@ -73,7 +73,7 @@ func (ll *Logger) Debug(format string, v ...interface{}) {
 	ll.Println(msg)
 }
 
-// BuildLogger build loger by level
+// BuildLogger 根据级别构建日志记录器
 func BuildLogger() {
 	level := conf.LogLevel
 	intLevel := LevelError
@@ -93,7 +93,7 @@ func BuildLogger() {
 	logger = &l
 }
 
-// Log return logger
+// Log 返回日志记录器实例
 func Log() *Logger {
 	if logger == nil {
 		l := Logger{

@@ -1,12 +1,12 @@
 package api
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/service/user"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/service/user"
 	"github.com/gin-gonic/gin"
 )
 
-// UserLogin user login api
+// UserLogin 用户登录接口
 func UserLogin(c *gin.Context) {
 	var service user.UserLoginService
 	if err := c.ShouldBind(&service); err != nil {
@@ -18,7 +18,7 @@ func UserLogin(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UserRegiser user register api
+// UserRegiser 用户注册接口
 func UserRegiser(c *gin.Context) {
 	var service user.UserRegisterService
 	if err := c.ShouldBind(&service); err != nil {
@@ -30,7 +30,7 @@ func UserRegiser(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UserInfo get user info
+// UserInfo 获取用户信息
 func UserInfo(c *gin.Context) {
 	var service user.UserInfoService
 	if err := c.ShouldBind(&service); err != nil {
@@ -42,7 +42,7 @@ func UserInfo(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UserMyInfo get user info form jwt info
+// UserMyInfo 从JWT信息中获取用户信息
 func UserMyInfo(c *gin.Context) {
 	var service user.UserInfoService
 	if err := c.ShouldBind(&service); err != nil {
@@ -55,7 +55,7 @@ func UserMyInfo(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UpdateUserInfo update user nickname
+// UpdateUserInfo 更新用户昵称
 func UpdateUserInfo(c *gin.Context) {
 	var service user.UserUpdateService
 	if err := c.ShouldBind(&service); err != nil {
@@ -68,7 +68,7 @@ func UpdateUserInfo(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// ConfirmUserEmail send confirm email
+// ConfirmUserEmail 发送确认邮件
 func ConfirmUserEmail(c *gin.Context) {
 	var service user.UserSendConfirmEmailService
 	if err := c.ShouldBind(&service); err != nil {

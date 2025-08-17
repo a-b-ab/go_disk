@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/auth"
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
+	"go-cloud-disk/auth"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils/logger"
 )
 
 type ShareSearchService struct {
@@ -12,11 +12,11 @@ type ShareSearchService struct {
 	Owner string `json:"owner" form:"owner"`
 }
 
-// ShareSearch search share by uuid or title or owner
+// ShareSearch 根据uuid、标题或所有者搜索分享
 func (service *ShareSearchService) ShareSearch() serializer.Response {
 	var shares []model.Share
 
-	// build search condition
+	// 构建搜索条件
 	searchInfo := model.DB.Model(&model.Share{})
 	if service.Uuid != "" {
 		searchInfo.Where("uuid = ?", service.Uuid)
@@ -25,12 +25,12 @@ func (service *ShareSearchService) ShareSearch() serializer.Response {
 		searchInfo.Where("title like ?", "%"+service.Title+"%")
 	}
 	if service.Owner != "" {
-		searchInfo.Where("status = ?", service.Owner)
+		searchInfo.Where("owner = ?", service.Owner)
 	}
 
-	// search share from database
+	// 从数据库搜索分享
 	if err := searchInfo.Find(&shares).Error; err != nil {
-		logger.Log().Error("[ShareSearchService.ShareSearch] Fail to find share: ", err)
+		logger.Log().Error("[ShareSearchService.ShareSearch] 查找分享失败: ", err)
 		return serializer.DBErr("", err)
 	}
 

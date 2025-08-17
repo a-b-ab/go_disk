@@ -5,13 +5,13 @@ import (
 	"mime/multipart"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/service/file"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/service/file"
+	"go-cloud-disk/utils"
 	"github.com/gin-gonic/gin"
 )
 
-// GetUploadURL return uploadurl
+// GetUploadURL 返回文件上传URL
 func GetUploadURL(c *gin.Context) {
 	var service file.GetUploadURLService
 	if err := c.ShouldBind(&service); err != nil {
@@ -24,7 +24,7 @@ func GetUploadURL(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// CreateFile create file in the database
+// CreateFile 在数据库中创建文件记录
 func CreateFile(c *gin.Context) {
 	var service file.FileCreateService
 	if err := c.ShouldBind(&service); err != nil {
@@ -37,7 +37,7 @@ func CreateFile(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// GetDownloadURL return a url to download file
+// GetDownloadURL 返回文件下载URL
 func GetDownloadURL(c *gin.Context) {
 	var service file.FileGetDownloadURLService
 	if err := c.ShouldBind(&service); err != nil {
@@ -51,36 +51,36 @@ func GetDownloadURL(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// getUploadFile get param from request
+// getUploadFileParam 从请求中获取上传文件参数
 func getUploadFileParam(c *gin.Context) (userId string, file *multipart.FileHeader, dst string, err error) {
 	userId = c.MustGet("UserId").(string)
 	file, err = c.FormFile("file")
 	if err != nil {
-		err = fmt.Errorf("get upload file err %v", err)
+		err = fmt.Errorf("获取上传文件错误：%v", err)
 		return
 	}
-	// save file to local
+	// 保存文件到本地
 	if file == nil {
-		err = fmt.Errorf("not file in parmas")
+		err = fmt.Errorf("参数中没有文件")
 		return
 	}
 
-	// Simple check if file size can be upload. Should use userstore to check
-	// file can be upload when allow user upload bigger file.
-	// Example, use file.checkIfFileSizeExceedsVolum() to check file can be upload
-	// In this situation, use simple check to enhance api speed
+	// 简单检查文件大小是否可以上传。当允许用户上传更大文件时，应该使用用户存储空间来检查
+	// 文件是否可以上传。
+	// 例如，使用 file.checkIfFileSizeExceedsVolum() 来检查文件是否可以上传
+	// 在这种情况下，使用简单检查来提高API速度
 	if file.Size > 1024*1024*10 {
-		err = fmt.Errorf("file size too bigger")
+		err = fmt.Errorf("文件大小过大")
 		return
 	}
-	// save file to the specified folder for easy delete file in the future
+	// 将文件保存到指定文件夹，以便将来方便删除文件
 	uploadDay := time.Now().Format("2006-01-02")
 	dst = utils.FastBuildString("./user/", uploadDay, "/", userId, "/", file.Filename)
 	c.SaveUploadedFile(file, dst)
 	return
 }
 
-// UploadFile upload file to cloud
+// UploadFile 上传文件到云端
 func UploadFile(c *gin.Context) {
 	var service file.FileUploadService
 	if err := c.ShouldBind(&service); err != nil {
@@ -97,7 +97,7 @@ func UploadFile(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// DeleteFile delete file in database, don't delete file on cloud
+// DeleteFile 删除数据库中的文件记录，不删除云端文件
 func DeleteFile(c *gin.Context) {
 	var service file.FileDeleteService
 	if err := c.ShouldBind(&service); err != nil {
@@ -111,7 +111,7 @@ func DeleteFile(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// UpdateFile update file info, such as remove file, update filename
+// UpdateFile 更新文件信息，如移动文件、更新文件名
 func UpdateFile(c *gin.Context) {
 	var service file.FileUpdateService
 	if err := c.ShouldBind(&service); err != nil {

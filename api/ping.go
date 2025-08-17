@@ -1,7 +1,7 @@
 package api
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
+	"go-cloud-disk/serializer"
 	"github.com/gin-gonic/gin"
 )
 

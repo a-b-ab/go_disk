@@ -33,7 +33,7 @@ var (
 )
 
 func Init() {
-	// get env
+	// 加载环境变量
 	godotenv.Load()
 	initEnv()
 }

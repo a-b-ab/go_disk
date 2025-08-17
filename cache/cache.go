@@ -4,13 +4,13 @@ import (
 	"context"
 	"strconv"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
+	"go-cloud-disk/conf"
 	"github.com/redis/go-redis/v9"
 )
 
 var RedisClient *redis.Client
 
-// init redis
+// Redis 初始化Redis客户端
 func Redis() {
 	db, _ := strconv.ParseUint(conf.RedisDB, 10, 64)
 	client := redis.NewClient(&redis.Options{
@@ -21,9 +21,8 @@ func Redis() {
 	})
 
 	_, err := client.Ping(context.Background()).Result()
-
 	if err != nil {
-		panic("can't connect redis")
+		panic("无法连接到Redis")
 	}
 
 	RedisClient = client

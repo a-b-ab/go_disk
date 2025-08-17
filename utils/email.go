@@ -7,18 +7,18 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
+	"go-cloud-disk/conf"
 	"github.com/jordan-wright/email"
 )
 
 func VerifyEmailFormat(email string) bool {
-	pattern := `^[^\s@]+@[^\s@]+\.[^\s@]+$` //match email
+	pattern := `^[^\s@]+@[^\s@]+\.[^\s@]+$` // 匹配邮箱格式
 	reg := regexp.MustCompile(pattern)
 	return reg.MatchString(email)
 }
 
-// sendMessage use defaultSmtpAuth to send email, If it runs for more
-// than 900ms, it is automatically considered to have been sent successfully.
+// sendMessage 使用默认SMTP认证发送邮件，如果运行时间超过
+// 900毫秒，自动认为发送成功。
 func sendMessage(ctx context.Context, em *email.Email) {
 	c, cancel := context.WithTimeout(ctx, time.Millisecond*900)
 	go func() {
@@ -34,24 +34,23 @@ func sendMessage(ctx context.Context, em *email.Email) {
 	}
 }
 
-// SendConfirmMessage send confirm code to target mailbox,
-// this func will return err when send email exceed 5 second
-// or connect send email web err
+// SendConfirmMessage 发送确认码到目标邮箱，
+// 当发送邮件超过5秒或连接邮件服务器出错时，此函数将返回错误
 func SendConfirmMessage(targetMailBox string, code string) error {
 	em := email.NewEmail()
 	em.From = fmt.Sprintf("Go-Cloud-Disk <%s>", conf.EmailAddr)
 	em.To = []string{targetMailBox}
 
-	// email title
-	em.Subject = "Email Confirm Code " + code
+	// 邮件标题
+	em.Subject = "邮箱确认码 " + code
 
-	// build email content
-	emailContentCode := "you confirm code is " + code + ", Your code will expire in 30 minutes"
-	emailContentEmail := "you confirm email is " + targetMailBox
+	// 构建邮件内容
+	emailContentCode := "您的确认码是 " + code + "，验证码将在30分钟后过期"
+	emailContentEmail := "您的确认邮箱是 " + targetMailBox
 	emailContent := emailContentCode + "\n" + emailContentEmail
 	em.Text = []byte(emailContent)
 
-	// send message
+	// 发送邮件
 	sendMessage(context.Background(), em)
 
 	return nil

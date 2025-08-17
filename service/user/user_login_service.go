@@ -1,9 +1,9 @@
 package user
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,8 +17,8 @@ type returnUser struct {
 	serializer.User
 }
 
-// Login check username and password can matched
-// and return user info and jwt token
+// Login 检查用户名和密码是否匹配
+// 并返回用户信息和JWT令牌
 func (service *UserLoginService) Login(c *gin.Context) serializer.Response {
 	var user model.User
 
@@ -29,11 +29,11 @@ func (service *UserLoginService) Login(c *gin.Context) serializer.Response {
 	if !user.CheckPassword(service.Password) {
 		return serializer.ParamsErr("账号或密码错误", nil)
 	}
-	token, err := utils.GenToken("miaoqiu", 24, &user)
+	token, err := utils.GenToken("crow", 24, &user)
 
-	// admin token only given 1 hour
+	// 管理员令牌只有1小时有效期
 	if user.Status == model.StatusAdmin || user.Status == model.StatusSuperAdmin {
-		token, err = utils.GenToken("miaoqiu", 1, &user)
+		token, err = utils.GenToken("crow", 1, &user)
 	}
 
 	if err != nil {

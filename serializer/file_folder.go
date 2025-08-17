@@ -1,6 +1,6 @@
 package serializer
 
-import "github.com/ChenMiaoQiu/go-cloud-disk/model"
+import "go-cloud-disk/model"
 
 // file_store serializer
 type FileFolder struct {

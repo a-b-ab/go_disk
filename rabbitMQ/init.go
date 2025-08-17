@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
+	"go-cloud-disk/conf"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -16,7 +16,7 @@ func InitRabbitMq() {
 	connString := strings.Join([]string{conf.RabbitMQ, "://", conf.RabbitMQUser, ":", conf.RabbitMQPassword, "@", conf.RabbitMQHost, ":", conf.RabbitMQPort, "/"}, "")
 	conn, err := amqp.Dial(connString)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to RabbitMQ: %s", err))
+		panic(fmt.Sprintf("连接RabbitMQ失败: %s", err))
 	}
 	RabbitMq = conn
 }

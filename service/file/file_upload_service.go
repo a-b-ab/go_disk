@@ -3,19 +3,20 @@ package file
 import (
 	"mime/multipart"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/disk"
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/disk"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils"
+	"go-cloud-disk/utils/logger"
 	"gorm.io/gorm"
 )
 
+// FileUploadService 文件上传服务结构体
 type FileUploadService struct {
-	FolderId string `form:"filefolder" json:"filefolder" binding:"required"`
+	FolderId string `form:"filefolder" json:"filefolder" binding:"required"` // 文件夹ID
 }
 
-// checkIfFileSizeExceedsVolum check if upload file size exceed user filestore size
+// checkIfFileSizeExceedsVolum 检查上传文件大小是否超过用户存储空间限制
 func checkIfFileSizeExceedsVolum(userStore *model.FileStore, userId string, size int64) (bool, error) {
 	if err := model.DB.Where("owner_id = ?", userId).Find(userStore).Error; err != nil {
 		return false, err
@@ -24,14 +25,14 @@ func checkIfFileSizeExceedsVolum(userStore *model.FileStore, userId string, size
 	return ans, nil
 }
 
-// createFile use transaction to save user file info for user store safe
+// createFile 使用事务保存用户文件信息，确保用户存储空间安全
 func createFile(t *gorm.DB, file model.File, userStore model.FileStore) error {
-	// save file info to database
+	// 保存文件信息到数据库
 	var err error
 	if err = t.Save(&file).Error; err != nil {
 		return err
 	}
-	// add user file store volum
+	// 增加用户文件存储容量
 	userStore.AddCurrentSize(file.Size)
 	if err = t.Save(&userStore).Error; err != nil {
 		return err
@@ -39,40 +40,41 @@ func createFile(t *gorm.DB, file model.File, userStore model.FileStore) error {
 	return nil
 }
 
+// UploadFile 上传文件到云端并创建文件记录
 func (service *FileUploadService) UploadFile(userId string, file *multipart.FileHeader, dst string) serializer.Response {
-	// get user upload file and save it to local
+	// 获取用户上传文件并保存到本地
 	var userStore model.FileStore
 	var err error
 
-	// check if the currentSize exceeds maxsize after adding the file size
+	// 检查添加文件大小后当前大小是否超过最大限制
 	var isExceed bool
 	if isExceed, err = checkIfFileSizeExceedsVolum(&userStore, userId, file.Size); err != nil {
-		logger.Log().Error("[FileUploadService.UploadFile] Fail to check user volum: ", err)
+		logger.Log().Error("[FileUploadService.UploadFile] 检查用户容量失败: ", err)
 		return serializer.DBErr("", err)
 	}
 	if isExceed {
 		return serializer.ParamsErr("ExceedStoreLimit", nil)
 	}
 
-	// upload file to cloud
+	// 上传文件到云端
 	md5String, err := utils.GetFileMD5(dst)
 	if err != nil {
-		logger.Log().Error("[FileUploadService.UploadFile] Fail to get file md5 Code: ", err)
+		logger.Log().Error("[FileUploadService.UploadFile] 获取文件MD5失败: ", err)
 		return serializer.ParamsErr("", err)
 	}
-	// if the file has been recently uploaded, do not upload it to
-	// the cloud and get file info from redis
+	// 如果文件最近已经上传过，不重复上传到云端
+	// 从Redis获取文件信息
 	filePath := model.GetFileInfoFromRedis(md5String)
 	if filePath == "" {
 		err = disk.BaseCloudDisk.UploadSimpleFile(dst, userId, md5String, file.Size)
 		if err != nil {
-			logger.Log().Error("[FileUploadService.UploadFile] Fail to upload file to Cloud: ", err)
+			logger.Log().Error("[FileUploadService.UploadFile] 上传文件到云端失败: ", err)
 			return serializer.InternalErr("", err)
 		}
 		filePath = userId
 	}
 
-	// insert file to database
+	// 插入文件到数据库
 	filename, extend := utils.SplitFilename(file.Filename)
 	fileModel := model.File{
 		Owner:          userId,
@@ -85,29 +87,29 @@ func (service *FileUploadService) UploadFile(userId string, file *multipart.File
 	}
 
 	t := model.DB.Begin()
-	// insert user file info to database
+	// 插入用户文件信息到数据库
 	if err := createFile(t, fileModel, userStore); err != nil {
-		logger.Log().Error("[FileUploadService.UploadFile] Fail to create file info: ", err)
+		logger.Log().Error("[FileUploadService.UploadFile] 创建文件信息失败: ", err)
 		t.Rollback()
 		return serializer.DBErr("", err)
 	}
 
-	// add deleted file size to filefolder and parent filefolder
+	// 将文件大小添加到文件夹和父文件夹
 	var userFileFolder model.FileFolder
 	if err := t.Where("uuid = ?", service.FolderId).Find(&userFileFolder).Error; err != nil {
-		logger.Log().Error("[FileUploadService.UploadFile] Fail to get filefolder info: ", err)
+		logger.Log().Error("[FileUploadService.UploadFile] 获取文件夹信息失败: ", err)
 		t.Rollback()
 		return serializer.DBErr("", err)
 	}
 	if err := userFileFolder.AddFileFolderSize(t, file.Size); err != nil {
-		logger.Log().Error("[FileUploadService.UploadFile] Fail to update filefolder volum: ", err)
+		logger.Log().Error("[FileUploadService.UploadFile] 更新文件夹容量失败: ", err)
 		t.Rollback()
 		return serializer.DBErr("", err)
 	}
 
 	t.Commit()
 
-	// save file info to database
+	// 保存文件信息到Redis
 	fileModel.SaveFileUploadInfoToRedis()
 	return serializer.Success(serializer.BuildFile(fileModel))
 }

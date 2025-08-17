@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/rabbitMQ"
+	"go-cloud-disk/utils"
+	"go-cloud-disk/utils/logger"
 )
 
 type SendConfirmEmailRequest struct {
@@ -23,24 +23,24 @@ func RunSendConfirmEmail(ctx context.Context) error {
 
 	go func() {
 		for msg := range msgs {
-			logger.Log().Info("[RunSendConfirmEmail] Received message: ", string(msg.Body))
+			logger.Log().Info("[RunSendConfirmEmail] 收到消息: ", string(msg.Body))
 
 			sendConirmEmailReq := SendConfirmEmailRequest{}
 			err = json.Unmarshal(msg.Body, &sendConirmEmailReq)
 			if err != nil {
-				logger.Log().Error("[RunSendConfirmEmail] Unmarshal message error: ", err)
+				logger.Log().Error("[RunSendConfirmEmail] 解析消息错误: ", err)
 			}
 
 			err = utils.SendConfirmMessage(sendConirmEmailReq.Email, sendConirmEmailReq.Code)
 			if err != nil {
-				logger.Log().Error("[RunSendConfirmEmail] Send confirm message error: ", err)
+				logger.Log().Error("[RunSendConfirmEmail] 发送确认邮件错误: ", err)
 			}
 
 			msg.Ack(false)
 		}
 	}()
 
-	logger.Log().Info("RunSendConfirmEmail service started")
+	logger.Log().Info("发送确认邮件服务已启动")
 	<-forever
 	return nil
 }

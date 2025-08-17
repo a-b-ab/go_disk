@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/cache"
-	"github.com/ChenMiaoQiu/go-cloud-disk/disk"
+	"go-cloud-disk/cache"
+	"go-cloud-disk/disk"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -14,16 +14,16 @@ import (
 type Share struct {
 	Uuid        string `gorm:"primarykey"`
 	Owner       string
-	FileId      string // file uuid of share file
+	FileId      string // 分享文件的文件uuid
 	FileName    string
 	Title       string
 	Size        int64
 	SharingTime string
 }
 
-// SetEmptyShare set a empty share
+// SetEmptyShare 设置空分享,表示分享链接已失效
 func (share *Share) SetEmptyShare() {
-	// remove share from dailyrank and add share into emptyshare set
+	// 从日排行榜中移除分享，并将分享添加到空分享集合中
 	if share.DailyViewCount() > 10 {
 		cache.RedisClient.ZRem(context.Background(), cache.DailyRankKey, share.Uuid)
 		cache.RedisClient.SAdd(context.Background(), cache.EmptyShare, share.Uuid)
@@ -37,7 +37,7 @@ func (share *Share) SetEmptyShare() {
 	share.SharingTime = ""
 }
 
-// BeforeCreate create uuid before insert database
+// BeforeCreate 在插入数据库前创建uuid
 func (file *Share) BeforeCreate(tx *gorm.DB) (err error) {
 	if file.Uuid == "" {
 		file.Uuid = uuid.New().String()
@@ -45,21 +45,21 @@ func (file *Share) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-// DownloadURL get share download url
+// DownloadURL 获取分享下载链接
 func (share *Share) DownloadURL() (string, error) {
 	var file File
 	if err := DB.Where("uuid = ?", share.FileId).Find(&file).Error; err != nil {
-		return "", fmt.Errorf("find user file err when build download url %v", err)
+		return "", fmt.Errorf("构建下载链接时查找用户文件失败 %v", err)
 	}
 
 	url, err := disk.BaseCloudDisk.GetObjectURL(file.FilePath, "", file.FileUuid+"."+file.FilePostfix)
 	if err != nil {
-		return "", fmt.Errorf("get object url err when get share download url, %v", err)
+		return "", fmt.Errorf("获取分享下载链接时获取对象URL失败，%v", err)
 	}
 	return url, nil
 }
 
-// ViewCount get share view from redis
+// ViewCount 从Redis获取分享查看次数
 func (share *Share) ViewCount() (num int64) {
 	countStr, _ := cache.RedisClient.Get(context.Background(), cache.ShareKey(share.Uuid)).Result()
 	if countStr == "" {
@@ -69,29 +69,28 @@ func (share *Share) ViewCount() (num int64) {
 	return
 }
 
-// DailyViewCount get daily view count by share uuid
+// DailyViewCount 根据分享uuid获取日查看次数
 func (share *Share) DailyViewCount() float64 {
 	countStr := cache.RedisClient.ZScore(context.Background(), cache.DailyRankKey, share.Uuid).Val()
 	return countStr
 }
 
-// AddViewCount add share view in redis
+// AddViewCount 在Redis中增加分享查看次数
 func (share *Share) AddViewCount() {
 	cache.RedisClient.Incr(context.Background(), cache.ShareKey(share.Uuid))
 	cache.RedisClient.ZIncrBy(context.Background(), cache.DailyRankKey, 1, share.Uuid)
 }
 
-// SaveShareInRedis save share info to redis
+// SaveShareInfoToRedis 保存分享信息到Redis
 func (share *Share) SaveShareInfoToRedis(downloadUrl string) error {
 	ctx := context.Background()
-	// if Owner is not null, it means that a func has already
-	// been written to redis
+	// 如果Owner不为空，说明函数已经写入到Redis中
 	if s := cache.RedisClient.HGet(ctx, cache.ShareInfoKey(share.Uuid), "Owner").Val(); s != "" {
 		return nil
 	}
 
-	// use ptpeline to save share info to redis for ensure
-	// share info all write to redis
+	// 使用管道保存分享信息到Redis以确保
+	// 分享信息全部写入Redis
 	saveShare := cache.RedisClient.Pipeline()
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "Owner", share.Owner)
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "FileId", share.FileId)
@@ -108,9 +107,9 @@ func (share *Share) SaveShareInfoToRedis(downloadUrl string) error {
 	return nil
 }
 
-// GetShareInfoFromRedis get share info from redis and return downloadurl
+// GetShareInfoFromRedis 从Redis获取分享信息并返回下载链接
 func (share *Share) GetShareInfoFromRedis() string {
-	// if is a empty share fill empty message
+	// 如果是空分享则填充空消息
 	if cache.RedisClient.SIsMember(context.Background(), cache.EmptyShare, share.Uuid).Val() {
 		share.Owner = ""
 		share.FileId = ""
@@ -131,14 +130,13 @@ func (share *Share) GetShareInfoFromRedis() string {
 	return shareInfo["downloadUrl"]
 }
 
-// CheckRedisExistsShare use title info to check, because title surely exsits
-// when the share info store to redis
+// CheckRedisExistsShare 使用标题信息检查，因为当分享信息存储到Redis时标题肯定存在
 func (share *Share) CheckRedisExistsShare() bool {
 	share.FileId, _ = cache.RedisClient.HGet(context.Background(), cache.ShareInfoKey(share.Uuid), "Title").Result()
 	return share.FileId != "" || cache.RedisClient.SIsMember(context.Background(), cache.EmptyShare, share.Uuid).Val()
 }
 
-// DeleteShareInfoInRedis delete share info that in redis
+// DeleteShareInfoInRedis 删除Redis中的分享信息
 func (share *Share) DeleteShareInfoInRedis() {
 	_ = cache.RedisClient.ZRem(context.Background(), cache.DailyRankKey, share.Uuid)
 	_ = cache.RedisClient.Del(context.Background(), cache.ShareInfoKey(share.Uuid)).Val()

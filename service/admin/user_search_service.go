@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils/logger"
 )
 
 type UserSearchService struct {
@@ -12,11 +12,11 @@ type UserSearchService struct {
 	Status   string `json:"status" form:"status"`
 }
 
-// UserSearch search user by uuid or nickname or status
+// UserSearch 根据uuid、昵称或状态搜索用户
 func (service *UserSearchService) UserSearch() serializer.Response {
 	var users []model.User
 
-	// build search gorm.DB
+	// 构建搜索查询条件
 	searchInfo := model.DB.Model(&model.User{})
 	if service.Uuid != "" {
 		searchInfo.Where("uuid = ?", service.Uuid)
@@ -28,9 +28,9 @@ func (service *UserSearchService) UserSearch() serializer.Response {
 		searchInfo.Where("status = ?", service.Status)
 	}
 
-	// search user in database
+	// 在数据库中搜索用户
 	if err := searchInfo.Find(&users).Error; err != nil {
-		logger.Log().Error("[UserSearchService.UserSearch] Fail to find user: ", err)
+		logger.Log().Error("[UserSearchService.UserSearch] 查找用户失败: ", err)
 		return serializer.DBErr("", err)
 	}
 

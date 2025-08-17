@@ -1,10 +1,10 @@
 package model
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/conf"
+	"go-cloud-disk/conf"
 )
 
-// migration database
+// migration 数据库迁移
 func migration() {
 	_ = DB.AutoMigrate(&User{})
 	_ = DB.AutoMigrate(&File{})
@@ -15,16 +15,16 @@ func migration() {
 }
 
 func initSuperAdmin() {
-	// create super admin
+	// 创建超级管理员
 	var count int64
 	adminUserName := conf.AdminUserName
 	if err := DB.Model(&User{}).Where("user_name = ?", adminUserName).Count(&count).Error; err != nil {
-		panic("create super admin err %v")
+		panic("创建超级管理员失败 %v")
 	}
 
 	if count == 0 {
 		if err := createSuperAdmin(); err != nil {
-			panic("create super admin err %v")
+			panic("创建超级管理员失败 %v")
 		}
 	}
 }

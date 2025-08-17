@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Response base serializer
+// Response 基础序列化器
 type Response struct {
 	Code  int         `json:"code"`
 	Data  interface{} `json:"data,omitempty"`
@@ -16,29 +16,29 @@ type Response struct {
 	Error string      `json:"error,omitempty"`
 }
 
-// Response Url link
+// ResponseUrl 响应URL链接
 type ResponseUrl struct {
 	Url string `json:"url"`
 }
 
 const (
-	// CodeNotLogin success code 200
+	// CodeSuccess 成功状态码 200
 	CodeSuccess = http.StatusOK
-	// CodeNotLogin Not Login Code 1250
+	// CodeNotLogin 未登录状态码 1250
 	CodeNotLogin = 1250
-	// CodeNotRightErr Unauthorized Code 401
+	// CodeNotAuthError 未授权状态码 401
 	CodeNotAuthError = http.StatusUnauthorized
-	// CodeDBError database error Code 500
+	// CodeDBError 数据库错误状态码 500
 	CodeDBError = http.StatusInternalServerError
-	// InternalError error Code 500
+	// CodeInternalError 内部错误状态码 500
 	CodeInternalError = http.StatusInternalServerError
-	// CodeError common error code 404
+	// CodeError 通用错误状态码 404
 	CodeError = http.StatusNotFound
-	// CodeParamsError params error Code 50001
+	// CodeParamsError 参数错误状态码 50001
 	CodeParamsError = 50001
 )
 
-// Success return a success response
+// Success 返回成功响应
 func Success(data interface{}) Response {
 	return Response{
 		Code: CodeSuccess,
@@ -47,8 +47,8 @@ func Success(data interface{}) Response {
 	}
 }
 
-// NotAuthErr use msg build a not auth err response, if msg is null
-// msg info is "NotAuth"
+// NotAuthErr 使用消息构建未授权错误响应，如果消息为空
+// 则默认消息为 "NotAuth"
 func NotAuthErr(msg string) Response {
 	if msg == "" {
 		msg = "NotAuth"
@@ -59,7 +59,7 @@ func NotAuthErr(msg string) Response {
 	}
 }
 
-// NotLogin return an unlogin response
+// NotLogin 返回未登录响应
 func NotLogin(msg string) Response {
 	if msg == "" {
 		msg = "NotLogin"
@@ -70,7 +70,7 @@ func NotLogin(msg string) Response {
 	}
 }
 
-// Err return a common error response
+// Err 返回通用错误响应
 func Err(errCode int, msg string, err error) Response {
 	res := Response{
 		Code: errCode,
@@ -82,7 +82,7 @@ func Err(errCode int, msg string, err error) Response {
 	return res
 }
 
-// DBErr return a database error response
+// DBErr 返回数据库错误响应
 func DBErr(msg string, err error) Response {
 	if msg == "" {
 		msg = "DBerr"
@@ -90,7 +90,7 @@ func DBErr(msg string, err error) Response {
 	return Err(CodeDBError, msg, err)
 }
 
-// InternalErr return an Internal err response
+// InternalErr 返回内部错误响应
 func InternalErr(msg string, err error) Response {
 	if msg == "" {
 		msg = "Internal"
@@ -98,7 +98,7 @@ func InternalErr(msg string, err error) Response {
 	return Err(CodeInternalError, msg, err)
 }
 
-// DBErr return a params error response
+// ParamsErr 返回参数错误响应
 func ParamsErr(msg string, err error) Response {
 	if msg == "" {
 		msg = "ParamErr"
@@ -106,7 +106,7 @@ func ParamsErr(msg string, err error) Response {
 	return Err(CodeParamsError, msg, err)
 }
 
-// ErrorResponse return err msg
+// ErrorResponse 返回错误消息
 func ErrorResponse(err error) Response {
 	if _, ok := err.(*json.UnmarshalTypeError); ok {
 		return ParamsErr("JsonNotMatched", err)

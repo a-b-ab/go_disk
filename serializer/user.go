@@ -1,8 +1,8 @@
 package serializer
 
-import "github.com/ChenMiaoQiu/go-cloud-disk/model"
+import "go-cloud-disk/model"
 
-// User serializer
+// User 用户序列化器
 type User struct {
 	ID                   string `json:"id"`
 	UserName             string `json:"username"`
@@ -13,7 +13,7 @@ type User struct {
 	Avatar               string `json:"avatar"`
 }
 
-// BuildUser return a user serializer
+// BuildUser 返回用户序列化器
 func BuildUser(user model.User) User {
 	return User{
 		ID:                   user.Uuid,
@@ -26,7 +26,7 @@ func BuildUser(user model.User) User {
 	}
 }
 
-// BuildUsers return user serializers
+// BuildUsers 返回用户序列化器列表
 func BuildUsers(users []model.User) (usersSerializer []User) {
 	for _, user := range users {
 		usersSerializer = append(usersSerializer, BuildUser(user))

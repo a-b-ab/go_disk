@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils/logger"
 )
 
 type UserFilestoreUpdateService struct {
@@ -12,19 +12,19 @@ type UserFilestoreUpdateService struct {
 }
 
 func (service *UserFilestoreUpdateService) UserFilestoreUpdate() serializer.Response {
-	// search filestore from database
+	// 从数据库搜索文件存储信息
 	var userFilestore model.FileStore
 	if err := model.DB.Where("owner_id = ?", service.UserId).First(&userFilestore).Error; err != nil {
-		logger.Log().Error("[UserFilestoreUpdateService.UserFilestoreUpdate] Fail to find filestore info: ", err)
+		logger.Log().Error("[UserFilestoreUpdateService.UserFilestoreUpdate] 查找文件存储信息失败: ", err)
 		return serializer.DBErr("", err)
 	}
 
-	// Maximum capacity of 1GB
+	// 最大容量限制为1GB
 	userFilestore.MaxSize = min(service.NewStoreVolum, int64(1024*1024*1024))
 	userFilestore.MaxSize = max(0, userFilestore.MaxSize)
 
 	if err := model.DB.Save(&userFilestore).Error; err != nil {
-		logger.Log().Error("[UserFilestoreUpdateService.UserFilestoreUpdate] Fail to update filestore info: ", err)
+		logger.Log().Error("[UserFilestoreUpdateService.UserFilestoreUpdate] 更新文件存储信息失败: ", err)
 		return serializer.DBErr("", err)
 	}
 

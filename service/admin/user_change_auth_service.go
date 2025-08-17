@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/model"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils/logger"
 )
 
 type UserChangeAuthService struct {
@@ -11,12 +11,12 @@ type UserChangeAuthService struct {
 	NewStatus string `json:"status" form:"status" required:"binding"`
 }
 
-// UserChangeAuth change user auth need input user status that use this func
+// UserChangeAuth 更改用户权限，需要输入使用此功能的用户状态
 func (service *UserChangeAuthService) UserChangeAuth(userStatus string) serializer.Response {
-	// get user info from database
+	// 从数据库获取用户信息
 	var user model.User
 	if err := model.DB.Where("uuid = ?", service.UserId).Find(&user).Error; err != nil {
-		logger.Log().Error("[UserChangeAuthService.UserChangeAuth] Fail to find user info: ", err)
+		logger.Log().Error("[UserChangeAuthService.UserChangeAuth] 查找用户信息失败: ", err)
 		return serializer.DBErr("", err)
 	}
 
@@ -24,12 +24,12 @@ func (service *UserChangeAuthService) UserChangeAuth(userStatus string) serializ
 		return serializer.ParamsErr("", nil)
 	}
 
-	// check if user is an admin
+	// 检查用户是否为管理员
 	if userStatus != model.StatusAdmin && userStatus != model.StatusSuperAdmin {
 		return serializer.NotAuthErr("")
 	}
 
-	// normal admin can't change admin auth
+	// 普通管理员不能更改管理员权限
 	if userStatus == model.StatusAdmin {
 		if user.Status == model.StatusAdmin || user.Status == model.StatusSuperAdmin {
 			return serializer.NotAuthErr("")
@@ -40,10 +40,10 @@ func (service *UserChangeAuthService) UserChangeAuth(userStatus string) serializ
 		}
 	}
 
-	// save user auth
+	// 保存用户权限
 	user.Status = service.NewStatus
 	if err := model.DB.Save(&user).Error; err != nil {
-		logger.Log().Error("[UserChangeAuthService.UserChangeAuth] Fail to save user info: ", err)
+		logger.Log().Error("[UserChangeAuthService.UserChangeAuth] 保存用户信息失败: ", err)
 		return serializer.DBErr("", err)
 	}
 	return serializer.Success(serializer.BuildUser(user))

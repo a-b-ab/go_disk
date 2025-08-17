@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/cache"
-	"github.com/ChenMiaoQiu/go-cloud-disk/model"
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ"
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ/task"
-	"github.com/ChenMiaoQiu/go-cloud-disk/serializer"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/cache"
+	"go-cloud-disk/model"
+	"go-cloud-disk/rabbitMQ"
+	"go-cloud-disk/rabbitMQ/task"
+	"go-cloud-disk/serializer"
+	"go-cloud-disk/utils"
+	"go-cloud-disk/utils/logger"
 )
 
 type UserSendConfirmEmailService struct {
@@ -30,19 +30,19 @@ func getConfirmCode() string {
 }
 
 func (service *UserSendConfirmEmailService) SendConfirmEmail() serializer.Response {
-	// check email format
+	// 检查邮箱格式
 	if !utils.VerifyEmailFormat(service.UserEmail) {
 		return serializer.ParamsErr("NotEmail", nil)
 	}
-	// check user request email times in recent
+	// 检查用户最近发送邮件的次数限制
 	if cache.RedisClient.Get(context.Background(), cache.RecentSendUserKey(service.UserEmail)).Val() != "" {
 		return serializer.ParamsErr("HasSendCode", nil)
 	}
 
-	// check if email has register
+	// 检查邮箱是否已注册
 	var emailNum int64
 	if err := model.DB.Model(&model.User{}).Where("user_name = ?", service.UserEmail).Count(&emailNum).Error; err != nil {
-		logger.Log().Error("[UserSendConfirmEmailService.SendConfirmEmail] Fail to find user: ", err)
+		logger.Log().Error("[UserSendConfirmEmailService.SendConfirmEmail] 查找用户失败: ", err)
 		return serializer.DBErr("", err)
 	}
 	if emailNum > 0 {
@@ -55,14 +55,15 @@ func (service *UserSendConfirmEmailService) SendConfirmEmail() serializer.Respon
 	if err := service.sendConfirmEmailToMQ(service.UserEmail, code); err != nil {
 		return serializer.InternalErr("", err)
 	}
-	// limit 1 email max request 1 confirm email in 3 minute
+	// 限制3分钟内每个邮箱最多请求1次确认邮件
 	cache.RedisClient.Set(context.Background(), cache.RecentSendUserKey(service.UserEmail), code, time.Minute*3)
 
 	return serializer.Success(nil)
 }
 
+// sendConfirmEmailToMQ 将确认邮件发送到消息队列
 func (service *UserSendConfirmEmailService) sendConfirmEmailToMQ(targetEmail string, code string) error {
-	// limit 1 second
+	// 限制1秒超时
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	sendConfirmEmailReq := task.SendConfirmEmailRequest{
@@ -72,7 +73,7 @@ func (service *UserSendConfirmEmailService) sendConfirmEmailToMQ(targetEmail str
 
 	body, err := json.Marshal(sendConfirmEmailReq)
 	if err != nil {
-		logger.Log().Error("[UserSendConfirmEmailService.SendConfirmEmailToMQ] Fail to marshal request: ", err)
+		logger.Log().Error("[UserSendConfirmEmailService.SendConfirmEmailToMQ] 序列化请求失败: ", err)
 		return err
 	}
 	err = rabbitMQ.SendMessageToMQ(ctx, rabbitMQ.RabbitMqSendEmailQueue, body)

@@ -3,13 +3,13 @@ package script
 import (
 	"context"
 
-	"github.com/ChenMiaoQiu/go-cloud-disk/rabbitMQ/task"
-	"github.com/ChenMiaoQiu/go-cloud-disk/utils/logger"
+	"go-cloud-disk/rabbitMQ/task"
+	"go-cloud-disk/utils/logger"
 )
 
 func SendConfirmEmailSync(ctx context.Context) {
 	err := task.RunSendConfirmEmail(ctx)
 	if err != nil {
-		logger.Log().Error("SendConfirmEmailSync error: ", err)
+		logger.Log().Error("[SendConfirmEmailSync] 发送确认邮件失败: ", err)
 	}
 }
