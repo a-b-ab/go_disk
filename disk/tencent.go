@@ -64,6 +64,7 @@ func (cloud *TencentCloudDisk) GetUploadPresignedURL(userId string, filePath str
 }
 
 // getDownloadPresignedURL 根据文件键生成下载预签名URL
+// 废弃⚠️
 func (cloud *TencentCloudDisk) getDownloadPresignedURL(key string) (string, error) {
 	client := cloud.getDefaultClient()
 	ctx := context.Background()
@@ -237,6 +238,46 @@ func (cloud *TencentCloudDisk) UploadSimpleFile(localFilePath string, userId str
 	}
 
 	return nil
+}
+
+// GetDownloadURL 根据文件路径生成预签名下载URL
+func (cloud *TencentCloudDisk) GetDownloadURL(filePath string, fileUUID string) (string, error) {
+	// 确保bucket url包含协议
+	bucketURL := cloud.bucketname
+	if !strings.HasPrefix(bucketURL, "http://") && !strings.HasPrefix(bucketURL, "https://") {
+		bucketURL = "https://" + bucketURL
+	}
+	// 拼接对象key
+	key := fmt.Sprintf("user/%s/%s.png", filePath, fileUUID)
+
+	u, err := url.Parse(bucketURL)
+	if err != nil {
+		return "", nil
+	}
+
+	client := &http.Client{
+		Transport: &cos.AuthorizationTransport{
+			SecretID:  cloud.secretId,
+			SecretKey: cloud.secretKey,
+		},
+	}
+
+	cosClient := cos.NewClient(&cos.BaseURL{BucketURL: u}, client)
+
+	// 生成预签名下载URL，有效期24小时
+	presignedURL, err := cosClient.Object.GetPresignedURL(
+		context.Background(),
+		http.MethodGet,
+		key,
+		cloud.secretId,
+		cloud.secretKey,
+		24*time.Hour,
+		nil,
+	)
+	if err != nil {
+		return "", err
+	}
+	return presignedURL.String(), nil
 }
 
 // fastBuildKey 使用用户ID、文件路径、文件名通过Builder生成文件键

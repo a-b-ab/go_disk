@@ -13,6 +13,8 @@ type CloudDisk interface {
 	GetDownloadPresignedURL(userId string, filePath string, fileName string) (string, error)
 	// GetObjectURL 生成对象URL。用户可以使用URL查看文件。
 	GetObjectURL(userId string, filePath string, fileName string) (string, error)
+	// GetDownloadURL 根据文件路径生成下载链接(用于分享)
+	GetDownloadURL(filePath string, fileUUID string) (string, error)
 	// DeleteObject 删除用户对象
 	DeleteObject(userId string, filePath string, items []string) error
 	// DeleteObjectFilefolder 删除用户对象文件夹
@@ -39,6 +41,8 @@ var NewCloudDiskMap map[string]NewCloudDisk
 func init() {
 	NewCloudDiskMap = make(map[string]NewCloudDisk)
 	NewCloudDiskMap["TENCENT"] = NewTencentCloudDisk
+	// todo 七牛
+	// NewCloudDiskMap["QINIU"]   = NewQiniuCloudDisk
 }
 
 // SetBaseCloudDisk 设置基础云盘实例，根据配置文件选择对应的云存储提供商

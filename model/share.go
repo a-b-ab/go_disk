@@ -7,6 +7,7 @@ import (
 
 	"go-cloud-disk/cache"
 	"go-cloud-disk/disk"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -77,7 +78,9 @@ func (share *Share) DailyViewCount() float64 {
 
 // AddViewCount 在Redis中增加分享查看次数
 func (share *Share) AddViewCount() {
+	// 1. Redis 中单独的访问计数器自增
 	cache.RedisClient.Incr(context.Background(), cache.ShareKey(share.Uuid))
+	// 2. Redis 中每日排行榜（有序集合）对应的分数自增 1
 	cache.RedisClient.ZIncrBy(context.Background(), cache.DailyRankKey, 1, share.Uuid)
 }
 
@@ -92,6 +95,7 @@ func (share *Share) SaveShareInfoToRedis(downloadUrl string) error {
 	// 使用管道保存分享信息到Redis以确保
 	// 分享信息全部写入Redis
 	saveShare := cache.RedisClient.Pipeline()
+	// 向 Redis 中的 哈希（Hash）类型存入分享信息。
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "Owner", share.Owner)
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "FileId", share.FileId)
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "FileName", share.FileName)
@@ -119,6 +123,7 @@ func (share *Share) GetShareInfoFromRedis() string {
 		share.SharingTime = ""
 		return ""
 	}
+	// 从 Redis 的 哈希（Hash） 中获取该分享的所有字段
 	shareInfo := cache.RedisClient.HGetAll(context.Background(), cache.ShareInfoKey(share.Uuid)).Val()
 	share.Owner = shareInfo["Owner"]
 	share.FileId = shareInfo["FileId"]

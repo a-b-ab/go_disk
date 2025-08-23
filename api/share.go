@@ -3,6 +3,7 @@ package api
 import (
 	"go-cloud-disk/serializer"
 	"go-cloud-disk/service/share"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -69,5 +70,18 @@ func ShareSaveFile(c *gin.Context) {
 
 	userId := c.MustGet("UserId").(string)
 	res := service.ShareSaveFile(userId)
+	c.JSON(200, res)
+}
+
+// ShareDownLoad 分享文件下载
+func ShareDownLoad(c *gin.Context) {
+	var service share.ShareDownloadService
+	if err := c.ShouldBind(&service); err != nil {
+		c.JSON(200, serializer.ErrorResponse(err))
+		return
+	}
+
+	shareId := c.Param("shareId")
+	res := service.GetDownloadUrl(shareId)
 	c.JSON(200, res)
 }

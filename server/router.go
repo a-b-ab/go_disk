@@ -3,6 +3,7 @@ package server
 import (
 	"go-cloud-disk/api"
 	"go-cloud-disk/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,6 +47,7 @@ func NewRouter() *gin.Engine {
 			auth.GET("share", api.GetUserAllShare)
 			auth.POST("share", api.CreateShare)
 			auth.DELETE("share/:shareId", api.DeleteShare)
+			auth.GET("share/:shareId/download", api.ShareDownLoad)
 			auth.POST("share/file", api.ShareSaveFile)
 
 			auth.GET("rank/day", api.GetDailyRank)

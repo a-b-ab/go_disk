@@ -3,6 +3,7 @@ package share
 import (
 	"time"
 
+	"go-cloud-disk/disk"
 	"go-cloud-disk/model"
 	"go-cloud-disk/serializer"
 	"go-cloud-disk/utils"
@@ -17,7 +18,8 @@ type ShareCreateService struct {
 
 // createShareSuccessResponse 创建分享成功响应结构体
 type createShareSuccessResponse struct {
-	ShareId string `json:"shareid"` // 分享ID
+	ShareId     string `json:"shareid"`     // 分享ID
+	DownLoadUrl string `json:"downloadurl"` // 预签名下载链接
 }
 
 // CreateShare 创建文件分享
@@ -42,8 +44,15 @@ func (service *ShareCreateService) CreateShare(userId string) serializer.Respons
 		logger.Log().Error("[ShareCreateService.CreateShare] 创建分享失败: ", err)
 		return serializer.DBErr("", err)
 	}
+	// 生成预签名下载URL
+	downloadUrl, err := disk.BaseCloudDisk.GetDownloadURL(shareFile.FilePath, shareFile.FileUuid)
+	if err != nil {
+		logger.Log().Error("[ShareCreateService.CreateShare] 生成下载链接失败: ", err)
+		return serializer.DBErr("", err)
+	}
 
 	return serializer.Success(createShareSuccessResponse{
-		ShareId: newShare.Uuid,
+		ShareId:     newShare.Uuid,
+		DownLoadUrl: downloadUrl,
 	})
 }

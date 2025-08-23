@@ -2,6 +2,7 @@ package auth
 
 import (
 	"go-cloud-disk/conf"
+
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
@@ -22,7 +23,7 @@ func InitCasbin() {
 	// 从字符串创建RBAC模型配置
 	// 定义了请求格式、策略格式、角色继承、策略效果和匹配规则
 	m, err := model.NewModelFromString(`
-	[request_definition]
+	[request_definition] 
 	r = sub, obj, act
 	
 	[policy_definition]

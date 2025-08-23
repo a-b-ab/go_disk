@@ -19,6 +19,7 @@ import (
 	"go-cloud-disk/server"
 	"go-cloud-disk/task"
 	"go-cloud-disk/utils/logger"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -51,16 +52,16 @@ func loadingScript() {
 }
 
 func main() {
-	// conf init
+	// 配置初始化
 	conf.Init()
 	initServer()
 	loadingScript()
 
-	// set router
+	// 设置路由
 	gin.SetMode(conf.GinMode)
 	r := server.NewRouter()
 
-	// gin gracefully shuts down the server
+	// 创建服务
 	srv := &http.Server{
 		Addr:    ":" + conf.ServerPort,
 		Handler: r,
@@ -68,19 +69,19 @@ func main() {
 
 	go func() {
 		log.Println("go-cloud-disk server start")
-		// connect serve
+		// 启动服务
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)
 		}
 	}()
 
-	// wait system exit signal
+	// 等待系统退出信号
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Println("Shutdown Server ...")
 
-	// set exit time
+	// 设置超时时间
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		log.Println("Server exiting")
