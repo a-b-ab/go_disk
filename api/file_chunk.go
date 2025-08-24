@@ -2,7 +2,6 @@ package api
 
 import (
 	"go-cloud-disk/serializer"
-	"go-cloud-disk/service/file"
 	"go-cloud-disk/service/file/chunk"
 
 	"github.com/gin-gonic/gin"
@@ -61,7 +60,7 @@ func CheckChunks(c *gin.Context) {
 
 // CompleteChunkUpload 完成分片上传
 func CompleteChunkUpload(c *gin.Context) {
-	var service file.FileChunkCompleteService
+	var service chunk.FileChunkCompleteService
 	if err := c.ShouldBind(&service); err != nil {
 		c.JSON(200, serializer.ErrorResponse(err))
 		return
