@@ -39,7 +39,7 @@ func NewRouter() *gin.Engine {
 			// 分片上传相关接口
 			auth.POST("file/chunk/init", api.InitChunkUpload)
 			auth.POST("file/chunk/upload", api.UploadChunk)
-			auth.GET("file/chunk/check", api.CheckChunks)
+			auth.POST("file/chunk/check", api.CheckChunks)
 			auth.POST("file/chunk/complete", api.CompleteChunkUpload)
 
 			auth.GET("filefolder/:filefolderid/file", api.GetFilefolderAllFile)

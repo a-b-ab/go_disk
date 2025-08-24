@@ -46,18 +46,16 @@ func UploadChunk(c *gin.Context) {
 
 // CheckChunks 检查已上传的分片
 func CheckChunks(c *gin.Context) {
-	uploadId := c.Query("upload_id")
-	if uploadId == "" {
-		c.JSON(200, serializer.ParamsErr("upload_id is required", nil))
+	var service chunk.FileChunkCheckService
+
+	// 绑定请求参数到service结构体
+	if err := c.ShouldBind(&service); err != nil {
+		c.JSON(200, serializer.ErrorResponse(err))
 		return
 	}
 
-	service := file.FileChunkCheckService{
-		UploadId: uploadId,
-	}
-
 	userId := c.MustGet("UserId").(string)
-	res := service.CheckChunks(userId)
+	res := service.CheckChunk(userId)
 	c.JSON(200, res)
 }
 
