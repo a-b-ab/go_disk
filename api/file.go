@@ -8,6 +8,7 @@ import (
 	"go-cloud-disk/serializer"
 	"go-cloud-disk/service/file"
 	"go-cloud-disk/utils"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -69,7 +70,7 @@ func getUploadFileParam(c *gin.Context) (userId string, file *multipart.FileHead
 	// 文件是否可以上传。
 	// 例如，使用 file.checkIfFileSizeExceedsVolum() 来检查文件是否可以上传
 	// 在这种情况下，使用简单检查来提高API速度
-	if file.Size > 1024*1024*10 {
+	if file.Size > 1024*1024*100 {
 		err = fmt.Errorf("文件大小过大")
 		return
 	}

@@ -59,3 +59,65 @@ func SplitFilename(str string) (filename string, extend string) {
 	}
 	return str, ""
 }
+
+// GetBytesMD5 获取字节数组的MD5校验码
+func GetBytesMD5(data []byte) string {
+	hash := md5.New()
+	hash.Write(data)
+	return hex.EncodeToString(hash.Sum(nil))
+}
+
+// UniqueAndSortInts 对整数切片去重并排序
+func UniqueAndSortInts(nums []int) []int {
+	if len(nums) == 0 {
+		return nums
+	}
+
+	// 使用map去重
+	uniqueMap := make(map[int]bool)
+	for _, num := range nums {
+		uniqueMap[num] = true
+	}
+
+	// 转换回切片
+	result := make([]int, 0, len(uniqueMap))
+	for num := range uniqueMap {
+		result = append(result, num)
+	}
+
+	// 排序
+	for i := 0; i < len(result)-1; i++ {
+		for j := 0; j < len(result)-1-i; j++ {
+			if result[j] > result[j+1] {
+				result[j], result[j+1] = result[j+1], result[j]
+			}
+		}
+	}
+
+	return result
+}
+
+// ContainsInt 检查切片是否包含指定整数
+func ContainsInt(nums []int, target int) bool {
+	for _, num := range nums {
+		if num == target {
+			return true
+		}
+	}
+	return false
+}
+
+// EnsureDir 确保目录存在，如果不存在则创建
+func EnsureDir(dirPath string) error {
+	return os.MkdirAll(dirPath, 0o755)
+}
+
+// WriteBytesToFile 将字节数组写入文件
+func WriteBytesToFile(filePath string, data []byte) error {
+	return os.WriteFile(filePath, data, 0o644)
+}
+
+// RemoveFile 删除文件
+func RemoveFile(filePath string) error {
+	return os.Remove(filePath)
+}

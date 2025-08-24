@@ -91,3 +91,22 @@ func main() {
 		log.Fatal("Server Shutdown:", err)
 	}
 }
+
+// func main() {
+// 	filePath := "【哲风壁纸】古建筑壁纸-壁纸.png"
+
+// 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+// 		fmt.Printf("❌ 文件不存在: %s\n", filePath)
+// 		return
+// 	}
+
+// 	// 调用库函数
+// 	chunkFiles, err := test.SplitFileToChunks(filePath)
+// 	if err != nil {
+// 		fmt.Printf("❌ 切片失败: %v\n", err)
+// 		return
+// 	}
+
+// 	// 打印信息
+// 	test.PrintChunkInfo(filePath, chunkFiles)
+// }

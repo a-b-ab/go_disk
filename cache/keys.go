@@ -33,3 +33,8 @@ func EmailCodeKey(email string) string {
 func RecentSendUserKey(email string) string {
 	return fmt.Sprintf("user:confirm:%s", email)
 }
+
+// ChunkUploadInfoKey 分片上传信息键
+func ChunkUploadInfoKey(uploadId string) string {
+	return fmt.Sprintf("chunk:upload:%s", uploadId)
+}
