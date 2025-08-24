@@ -93,7 +93,7 @@ func main() {
 }
 
 // func main() {
-// 	filePath := "【哲风壁纸】古建筑壁纸-壁纸.png"
+// 	filePath := "【哲风壁纸】动漫角色-战斗姿势.png"
 
 // 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 // 		fmt.Printf("❌ 文件不存在: %s\n", filePath)

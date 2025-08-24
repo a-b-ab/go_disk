@@ -74,21 +74,39 @@ func (service *FileChunkCompleteService) CompleteChunkUpload(userId string) seri
 
 	// 7. 检查文件是否已存在（去重）
 	existingFilePath := model.GetFileInfoFromRedis(fileMD5)
-	if existingFilePath == "" {
-		// 文件不存在，需要上传到COS
-		err = disk.BaseCloudDisk.UploadSimpleFile(mergedFilePath, userId, fileMD5, uploadInfo.FileSize)
-		if err != nil {
-			logger.Log().Error("[FileChunkCompleteService.CompleteChunkUpload] 上传文件到COS失败: ", err)
-			return serializer.InternalErr("上传文件失败", err)
-		}
+	needUploadToCOS := existingFilePath == ""
+	if needUploadToCOS {
 		existingFilePath = userId
 	}
 
-	// 8. 创建文件记录并入库
+	// 8. 创建文件记录并入库（先完成数据库操作）
 	fileModel, err := service.createFileRecord(uploadInfo, fileMD5, existingFilePath, userId, userStore)
 	if err != nil {
 		logger.Log().Error("[FileChunkCompleteService.CompleteChunkUpload] 创建文件记录失败: ", err)
 		return serializer.DBErr("创建文件记录失败", err)
+	}
+
+	// 7.1 如果需要上传到COS，使用协程异步处理
+	if needUploadToCOS {
+		go func() {
+			// 复制合并文件路径，因为主协程会删除原文件
+			tempCopyPath := mergedFilePath + ".png"
+			if err := service.copyFile(mergedFilePath, tempCopyPath); err != nil {
+				logger.Log().Error("[FileChunkCompleteService.CompleteChunkUpload] 复制临时文件失败: ", err)
+				return
+			}
+			defer os.Remove(tempCopyPath) // 确保清理复制的临时文件
+
+			// 异步上传到COS
+			err := disk.BaseCloudDisk.UploadSimpleFile(tempCopyPath, userId, fileMD5, uploadInfo.FileSize)
+			if err != nil {
+				logger.Log().Error("[FileChunkCompleteService.CompleteChunkUpload] 异步上传文件到COS失败: ", err)
+				// 这里可以考虑重试机制或者更新文件状态
+				return
+			}
+
+			logger.Log().Info("[FileChunkCompleteService.CompleteChunkUpload] 文件异步上传到COS成功: ", fileMD5)
+		}()
 	}
 
 	// 9. 清理Redis分片信息
@@ -237,6 +255,24 @@ func createFile(tx *gorm.DB, file model.File, userStore model.FileStore) error {
 	}
 
 	return nil
+}
+
+// copyFile 复制文件
+func (service *FileChunkCompleteService) copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	return err
 }
 
 // isSliceEqual 比较两个int切片是否相等
