@@ -1,0 +1,98 @@
+// func (service *AutoGetTag) GetAutoTags(fileID string) serializer.Response {
+// 	// 查找文件的信息
+// 	var file model.File
+// 	if err := model.DB.Where("uuid = ?", fileID).First(&file).Error; err != nil {
+// 		logger.Log().Error("[AutoGetTag.GetAutoTags] 查找文件失败: ", err)
+// 		return serializer.DBErr("文件不存在", err)
+// 	}
+
+// 	// 生成预签名下载URL
+// 	downloadUrl, err := disk.BaseCloudDisk.GetDownloadURL(file.FilePath, file.FileUuid)
+// 	if err != nil {
+// 		logger.Log().Error("[AutoGetTag.GetAutoTags] 生成预签名下载URL失败: ", err)
+// 		return serializer.DBErr("生成预签名下载URL失败", err)
+// 	}
+
+// 	// 生成任务ID
+// 	taskID := uuid.New().String()
+
+// 	// 保存任务状态到Redis
+// 	taskInfo := map[string]interface{}{
+// 		"task_id":    taskID,
+// 		"file_id":    fileID,
+// 		"status":     "submitted",
+// 		"created_at": time.Now().Unix(),
+// 	}
+
+// 	taskData, _ := json.Marshal(taskInfo)
+// 	cache.RedisClient.Set(context.Background(),
+// 		fmt.Sprintf("tag_task:%s", taskID),
+// 		string(taskData),
+// 		time.Hour*24).Err() // 24小时过期
+
+// 	// 启动异步标签识别
+// 	go service.processTagsAsync(taskID, fileID, downloadUrl)
+
+// 	// 立即返回任务ID
+// 	response := map[string]interface{}{
+// 		"task_id": taskID,
+// 		"status":  "submitted",
+// 		"file_id": fileID,
+// 	}
+
+// 	return serializer.Success(response)
+// }
+
+// // processTagsAsync 异步处理标签识别
+// func (service *AutoGetTag) processTagsAsync(taskID, fileID, downloadUrl string) {
+// 	// 更新任务状态为处理中
+// 	service.updateTaskStatus(taskID, "processing", nil, nil)
+
+// 	// 创建腾讯云标签识别实例
+// 	tencentTag := disk.NewTencentImageTag()
+
+// 	// 调用图片标签识别
+// 	tags, err := tencentTag.DetectLabels(downloadUrl)
+// 	if err != nil {
+// 		logger.Log().Error("[AutoGetTag.processTagsAsync] 调用腾讯云标签识别失败: ", err)
+// 		service.updateTaskStatus(taskID, "failed", nil, err)
+// 		return
+// 	}
+
+// 	// 过滤敏感词
+// 	filteredTags := tencentTag.FilterSensitiveWords(tags)
+
+// 	// 保存标签到数据库
+// 	if err := service.saveTagsToDatabase(fileID, filteredTags); err != nil {
+// 		logger.Log().Error("[AutoGetTag.processTagsAsync] 保存标签到数据库失败: ", err)
+// 		service.updateTaskStatus(taskID, "failed", nil, err)
+// 		return
+// 	}
+
+// 	// 更新任务状态为完成
+// 	service.updateTaskStatus(taskID, "completed", filteredTags, nil)
+// }
+
+// // updateTaskStatus 更新任务状态
+// func (service *AutoGetTag) updateTaskStatus(taskID, status string, tags []disk.TagResult, err error) {
+// 	taskInfo := map[string]interface{}{
+// 		"task_id":    taskID,
+// 		"status":     status,
+// 		"updated_at": time.Now().Unix(),
+// 	}
+
+// 	if tags != nil {
+// 		taskInfo["tags"] = tags
+// 		taskInfo["count"] = len(tags)
+// 	}
+
+// 	if err != nil {
+// 		taskInfo["error"] = err.Error()
+// 	}
+
+// 	taskData, _ := json.Marshal(taskInfo)
+// 	cache.RedisClient.Set(context.Background(),
+// 		fmt.Sprintf("tag_task:%s", taskID),
+// 		string(taskData),
+// 		time.Hour*24).Err()
+// }

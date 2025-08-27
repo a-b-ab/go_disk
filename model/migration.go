@@ -11,6 +11,8 @@ func migration() {
 	_ = DB.AutoMigrate(&FileFolder{})
 	_ = DB.AutoMigrate(&FileStore{})
 	_ = DB.AutoMigrate(&Share{})
+	_ = DB.AutoMigrate(&Tag{})
+	_ = DB.AutoMigrate(&FileTag{})
 	initSuperAdmin()
 }
 

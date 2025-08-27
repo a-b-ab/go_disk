@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go-cloud-disk/cache"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -15,7 +16,7 @@ type File struct {
 	Owner          string // 文件所有者，如果文件被删除则所有者为空
 	FileName       string // 真实文件名
 	FilePostfix    string
-	FileUuid       string // 云端文件使用md5作为名称
+	FileUuid       string `gorm:"unique;not null"` // 云端文件使用md5作为名称
 	FilePath       string // 云端文件的文件夹路径，用于保存分享文件
 	ParentFolderId string
 	Size           int64 // 文件大小

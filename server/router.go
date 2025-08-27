@@ -42,6 +42,10 @@ func NewRouter() *gin.Engine {
 			auth.POST("file/chunk/check", api.CheckChunks)
 			auth.POST("file/chunk/complete", api.CompleteChunkUpload)
 
+			// 智能标签相关接口
+			auth.POST("tag/auto", api.AutoTagFile)
+			// auth.POST("tag/:fileid/manual", api.ManualTagFile)
+
 			auth.GET("filefolder/:filefolderid/file", api.GetFilefolderAllFile)
 			auth.GET("filefolder/:filefolderid/filefolder", api.GetFilefolderAllFilefolder)
 			auth.POST("filefolder", api.CreateFileFolder)
