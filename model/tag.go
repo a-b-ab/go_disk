@@ -14,9 +14,9 @@ type Tag struct {
 // FileTag 文件标签关联模型
 type FileTag struct {
 	ID     string `gorm:"primarykey" json:"id"`
-	FileID string `gorm:"not null;index" json:"file_id"` // 文件ID，关联files表 外键 -> files.file_uuid
-	TagID  string `gorm:"not null;index" json:"tag_id"`  // 标签ID，关联tags表
-	File   File   `gorm:"foreignKey:FileID;references:FileUuid;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"file"`
+	FileID string `gorm:"index" json:"file_id"`         // 文件ID，关联files表 外键 -> files.file_uuid
+	TagID  string `gorm:"not null;index" json:"tag_id"` // 标签ID，关联tags表
+	File   File   `gorm:"foreignKey:FileID;references:FileUuid;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"file"`
 	Tag    Tag    `gorm:"foreignKey:TagID;references:ID" json:"tag"`
 }
 
