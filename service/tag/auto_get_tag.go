@@ -1,12 +1,20 @@
 package tag
 
 import (
+	"bytes"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"io"
+	"net/http"
 
 	"go-cloud-disk/disk"
 	"go-cloud-disk/model"
 	"go-cloud-disk/serializer"
 	"go-cloud-disk/utils/logger"
+
+	"github.com/disintegration/imaging"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -34,20 +42,58 @@ func (service *AutoGetTag) GetAutoTags(c *gin.Context) serializer.Response {
 	// 创建腾讯云标签识别实例
 	tencentTag := disk.NewTencentImageTag()
 
-	// // 编码为Base64
-	// imageBase64, err := utils.ImageURLToBase64(downLoadURL)
-	// if err != nil {
-	// 	logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 图片转Base64失败: ", err)
-	// 	return serializer.DBErr("图片转Base64失败", err)
-	// }
+	resp, err := http.Get(downLoadURL)
+	if err != nil || resp.StatusCode != 200 {
+		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 下载图片失败: ", err)
+		return serializer.DBErr("下载图片失败", err)
+	}
+	defer resp.Body.Close()
 
-	// // 调用图片标签识别
-	// tags, err := tencentTag.DetectLabelBase64(imageBase64)
-	tags, err := tencentTag.DetectLabels(downLoadURL)
+	// 读取图片数据
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 读取图片数据失败: ", err)
+		return serializer.DBErr("读取图片数据失败", err)
+	}
+
+	// 记录原图大小
+	originalSize := len(imageData)
+
+	// 解码图片
+	img, _, err := image.Decode(bytes.NewReader(imageData))
+	if err != nil {
+		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 解码图片失败: ", err)
+		return serializer.DBErr("解码图片失败", err)
+	}
+	// 裁剪中心区域（保留原图 80% 的宽高）
+	w := img.Bounds().Dx()
+	h := img.Bounds().Dy()
+	cropW := int(float64(w) * 0.9)
+	cropH := int(float64(h) * 0.9)
+	cropped := imaging.CropCenter(img, cropW, cropH)
+
+	// 缩放图片（宽度最大 4096px，高度按比例）
+	maxWidth := 4096
+	resized := imaging.Resize(cropped, maxWidth, 0, imaging.Lanczos)
+
+	// 压缩为JPEG并编码为Base64
+	var buf bytes.Buffer
+	if err := jpeg.Encode(&buf, resized, &jpeg.Options{Quality: 90}); err != nil {
+		logger.Log().Error("[AutoGetTag.GetAutoTags] 图片压缩失败: ", err)
+		return serializer.DBErr("图片压缩失败", err)
+	}
+
+	fmt.Printf("原图大小: %d bytes, 压缩后大小: %d bytes\n", originalSize, buf.Len())
+
+	base64Img := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	tags, err := tencentTag.DetectLabelBase64(base64Img)
 	if err != nil {
 		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 调用图片标签识别失败: ", err)
 		return serializer.DBErr("调用图片标签识别失败", err)
 	}
+
+	// 压缩掉了约 84.7% 的文件体积
 
 	// 过滤敏感词，todo
 
