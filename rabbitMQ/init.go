@@ -5,12 +5,16 @@ import (
 	"strings"
 
 	"go-cloud-disk/conf"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 var RabbitMq *amqp.Connection
 
-var RabbitMqSendEmailQueue = "send-email-queue"
+var (
+	RabbitMqSendEmailQueue = "send-email-queue"
+	RabbitMqAutoTagQueue   = "auto-tag-queue"
+)
 
 func InitRabbitMq() {
 	connString := strings.Join([]string{conf.RabbitMQ, "://", conf.RabbitMQUser, ":", conf.RabbitMQPassword, "@", conf.RabbitMQHost, ":", conf.RabbitMQPort, "/"}, "")

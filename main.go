@@ -49,6 +49,7 @@ func initServer() {
 func loadingScript() {
 	ctx := context.Background()
 	go script.SendConfirmEmailSync(ctx)
+	go script.AutoTagSync(ctx)
 }
 
 func main() {
