@@ -18,11 +18,7 @@ type AutoGetTag struct {
 }
 
 func (service *AutoGetTag) GetAutoTags(c *gin.Context) serializer.Response {
-	// // 获取当前用户ID（假设已登录并有中间件注入）
-	// userId, exists := c.Get("user_id")
-	// if !exists {
-	// 	return serializer.NotAuthErr("用户未登录")
-	// }
+	// todo 用户鉴权
 
 	// 发送自动标签识别任务到MQ
 	if err := service.sendAutoTagToMQ(service.FileID, ""); err != nil {
