@@ -19,7 +19,12 @@ type File struct {
 	FileUuid       string `gorm:"unique;not null"` // 云端文件使用md5作为名称
 	FilePath       string // 云端文件的文件夹路径，用于保存分享文件
 	ParentFolderId string
-	Size           int64 // 文件大小
+	Size           int64      // 文件大小
+	RefCount       int64      `gorm:"default:1"` // 文件引用计数,默认为1
+	IsDeleted      int        `gorm:"default:0"` // 逻辑删除标记
+	DeletedAt      *time.Time // 删除时间
+	CreatedAt      time.Time  // 创建时间
+	UpdatedAt      time.Time
 }
 
 // BeforeCreate 在插入数据库前创建uuid

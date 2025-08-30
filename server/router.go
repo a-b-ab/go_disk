@@ -46,6 +46,13 @@ func NewRouter() *gin.Engine {
 			auth.POST("tag/auto", api.AutoTagFile)
 			// auth.POST("tag/:fileid/manual", api.ManualTagFile)
 
+			// 回收站相关接口
+			auth.DELETE("file/:fileid/logical", api.LogicalDeleteFile)
+			auth.POST("file/recycle-bin/:recycleBinId/restore", api.RestoreFile)
+			auth.DELETE("file/recycle-bin/empty", api.EmptyRecycleBin)
+			auth.GET("file/recycle-bin/config", api.GetRecycleBinConfig)
+			auth.PUT("file/recycle-bin/config", api.UpdateRecycleBinConfig)
+
 			auth.GET("filefolder/:filefolderid/file", api.GetFilefolderAllFile)
 			auth.GET("filefolder/:filefolderid/filefolder", api.GetFilefolderAllFilefolder)
 			auth.POST("filefolder", api.CreateFileFolder)

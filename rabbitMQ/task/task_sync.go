@@ -10,6 +10,7 @@ import (
 	"image/jpeg"
 	"io"
 	"net/http"
+	"time"
 
 	"go-cloud-disk/disk"
 	"go-cloud-disk/model"
@@ -29,6 +30,11 @@ type SendConfirmEmailRequest struct {
 type AutoTagRequest struct {
 	FileID string `json:"file_id"`
 	UserID string `json:"user_id"`
+}
+
+type FileCleanRequest struct {
+	FileUuid  string `json:"file_uuid"`
+	CleanTime int64  `json:"clean_time"` // Unix时间戳
 }
 
 func RunSendConfirmEmail(ctx context.Context) error {
@@ -227,4 +233,81 @@ func saveTagsToDatabase(fileID string, tags []disk.TagResult) error {
 	}
 
 	return tx.Commit().Error
+}
+
+func RunFileCleanService(ctx context.Context) error {
+	msgs, err := rabbitMQ.ConsumerMessage(ctx, rabbitMQ.RabbitMqFileCleanQueue)
+	if err != nil {
+		return err
+	}
+	forever := make(chan struct{})
+
+	go func() {
+		for msg := range msgs {
+			logger.Log().Info("[RunFileCleanService] 收到消息: ", string(msg.Body))
+
+			fileCleanReq := FileCleanRequest{}
+			err = json.Unmarshal(msg.Body, &fileCleanReq)
+			if err != nil {
+				logger.Log().Error("[RunFileCleanService] 解析消息错误: ", err)
+				msg.Nack(false, false) // 拒绝消息，不重新入队
+				continue
+			}
+
+			// 检查是否到了清理时间
+			if time.Now().Unix() < fileCleanReq.CleanTime {
+				// 还没到时间,重新入队延迟处理
+				msg.Nack(false, true)
+				continue
+			}
+
+			err = processFileClean(fileCleanReq.FileUuid)
+			if err != nil {
+				logger.Log().Error("[RunFileCleanService] 处理文件清理失败: ", err)
+				msg.Nack(false, false) // 拒绝消息，不重新入队
+			} else {
+				msg.Ack(false) // 确认消息
+			}
+		}
+	}()
+
+	logger.Log().Info("文件清理服务已启动")
+	<-forever
+	return nil
+}
+
+// processFileClean物理文件删除
+func processFileClean(fileUuid string) error {
+	// 再次检查文件引用计数
+	var file model.File
+	if err := model.DB.Select("ref_count, file_path, is_deleted").Where("file_uuid = ?", fileUuid).First(&file).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			logger.Log().Info(fmt.Sprintf("[processFileClean] 文件已不存在: FileUuid=%s", fileUuid))
+			return nil // 文件已不存在，认为成功
+		}
+		return fmt.Errorf("查询文件失败: %v", err)
+	}
+
+	// 如果引用计数大于0或文件未被删除，跳过清理
+	if file.RefCount > 0 || file.IsDeleted == 0 {
+		logger.Log().Info(fmt.Sprintf("[processFileClean] 文件仍有引用或未删除，跳过清理: FileUuid=%s, RefCount=%d, IsDeleted=%v",
+			fileUuid, file.RefCount, file.IsDeleted))
+		return nil
+	}
+
+	// 从云存储删除物理文件
+	if err := disk.BaseCloudDisk.DeleteObject("", file.FilePath, []string{fileUuid}); err != nil {
+		logger.Log().Error(fmt.Sprintf("[processFileClean] 从云存储删除文件失败: FileUuid=%s, FilePath=%s, Error=%v",
+			fileUuid, file.FilePath, err))
+		return fmt.Errorf("从云存储删除文件失败: %v", err)
+	}
+
+	// 从数据库删除文件记录
+	if err := model.DB.Where("file_uuid = ?", fileUuid).Delete(&model.File{}).Error; err != nil {
+		logger.Log().Error(fmt.Sprintf("[processFileClean] 从数据库删除文件记录失败: FileUuid=%s, Error=%v", fileUuid, err))
+		return fmt.Errorf("从数据库删除文件记录失败: %v", err)
+	}
+
+	logger.Log().Info(fmt.Sprintf("[processFileClean] 文件物理删除完成: FileUuid=%s", fileUuid))
+	return nil
 }

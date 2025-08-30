@@ -14,6 +14,7 @@ var RabbitMq *amqp.Connection
 var (
 	RabbitMqSendEmailQueue = "send-email-queue"
 	RabbitMqAutoTagQueue   = "auto-tag-queue"
+	RabbitMqFileCleanQueue = "file-clean-queue"
 )
 
 func InitRabbitMq() {

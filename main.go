@@ -50,6 +50,7 @@ func loadingScript() {
 	ctx := context.Background()
 	go script.SendConfirmEmailSync(ctx)
 	go script.AutoTagSync(ctx)
+	go script.FileCleanSync(ctx)
 }
 
 func main() {
