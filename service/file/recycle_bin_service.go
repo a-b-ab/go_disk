@@ -41,14 +41,14 @@ func (service *GetRecycleBinListService) GetRecycleBinList(userID string) serial
 	var total int64
 
 	// 查询总数
-	if err := model.DB.Model(&model.RecycleBin{}).Where("user_id = ? AND is_restored = 1", userID).Count(&total).Error; err != nil {
+	if err := model.DB.Model(&model.RecycleBin{}).Where("user_id = ? AND is_restored = 0", userID).Count(&total).Error; err != nil {
 		logger.Log().Error("[GetRecycleBinList] 查询回收站总数失败: ", err)
 		return serializer.DBErr("查询回收站失败", err)
 	}
 
 	// 分页查询
 	offset := (service.Page - 1) * service.PageSize
-	if err := model.DB.Where("user_id = ? AND is_restored = false", userID).
+	if err := model.DB.Where("user_id = ? AND is_restored = 0", userID).
 		Order("deleted_at DESC").
 		Offset(offset).
 		Limit(service.PageSize).

@@ -79,6 +79,7 @@ func NewRouter() *gin.Engine {
 				admin.DELETE("share/:shareId", api.AdminDeleteShare)
 
 				admin.DELETE("file/:fileId", api.AdminDeleteFile)
+				admin.GET("file/recycle-bin", api.GetRecycleBinList)
 
 				admin.GET("filestore/:userId", api.AdminGetFileStoreInfo)
 				admin.PUT("filestore", api.UserFileStoreUpdate)

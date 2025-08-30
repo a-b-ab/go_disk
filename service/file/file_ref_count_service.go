@@ -62,7 +62,7 @@ func (service *FileRefCountService) LogicalDeleteFile(userID, fileID string) ser
 	// 2. 标记为已删除
 	now := time.Now()
 	if err := tx.Model(&file).Updates(map[string]interface{}{
-		"is_deleted": true,
+		"is_deleted": 1,
 		"deleted_at": &now,
 		"owner":      "", // 清空所有者信息
 	}).Error; err != nil {
