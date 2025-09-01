@@ -280,20 +280,20 @@ func RunFileCleanService(ctx context.Context) error {
 func processFileClean(fileUuid string) error {
 	// 再次检查文件引用计数
 	var file model.File
-	if err := model.DB.Select("ref_count, file_path, is_deleted").Where("file_uuid = ?", fileUuid).First(&file).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			logger.Log().Info(fmt.Sprintf("[processFileClean] 文件已不存在: FileUuid=%s", fileUuid))
-			return nil // 文件已不存在，认为成功
-		}
-		return fmt.Errorf("查询文件失败: %v", err)
-	}
+	// if err := model.DB.Select("ref_count, file_path, is_deleted").Where("file_uuid = ?", fileUuid).First(&file).Error; err != nil {
+	// 	if err == gorm.ErrRecordNotFound {
+	// 		logger.Log().Info(fmt.Sprintf("[processFileClean] 文件已不存在: FileUuid=%s", fileUuid))
+	// 		return nil // 文件已不存在，认为成功
+	// 	}
+	// 	return fmt.Errorf("查询文件失败: %v", err)
+	// }
 
-	// 如果引用计数大于0或文件未被删除，跳过清理
-	if file.RefCount > 0 || file.IsDeleted == 0 {
-		logger.Log().Info(fmt.Sprintf("[processFileClean] 文件仍有引用或未删除，跳过清理: FileUuid=%s, RefCount=%d, IsDeleted=%v",
-			fileUuid, file.RefCount, file.IsDeleted))
-		return nil
-	}
+	// // 如果引用计数大于0或文件未被删除，跳过清理
+	// if file.RefCount > 0 || file.IsDeleted == 0 {
+	// 	logger.Log().Info(fmt.Sprintf("[processFileClean] 文件仍有引用或未删除，跳过清理: FileUuid=%s, RefCount=%d, IsDeleted=%v",
+	// 		fileUuid, file.RefCount, file.IsDeleted))
+	// 	return nil
+	// }
 
 	// 从云存储删除物理文件
 	if err := disk.BaseCloudDisk.DeleteObject("", file.FilePath, []string{fileUuid}); err != nil {

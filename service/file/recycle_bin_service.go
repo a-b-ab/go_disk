@@ -94,22 +94,22 @@ func (service *RecycleBinService) EmptyRecycleBin(userID string) serializer.Resp
 		return serializer.DBErr("查询回收站失败", err)
 	}
 
-	// 处理每个文件
-	for _, rb := range recycleBins {
-		// 检查文件引用计数
-		var file model.File
-		if err := tx.Select("ref_count, file_uuid").Where("uuid = ?", rb.FileID).First(&file).Error; err != nil {
-			logger.Log().Error(fmt.Sprintf("[EmptyRecycleBin] 查询文件失败: FileID=%s, Error=%v", rb.FileID, err))
-			continue
-		}
+	// // 处理每个文件
+	// for _, rb := range recycleBins {
+	// 	// 检查文件引用计数
+	// 	var file model.File
+	// 	if err := tx.Select("ref_count, file_uuid").Where("uuid = ?", rb.FileID).First(&file).Error; err != nil {
+	// 		logger.Log().Error(fmt.Sprintf("[EmptyRecycleBin] 查询文件失败: FileID=%s, Error=%v", rb.FileID, err))
+	// 		continue
+	// 	}
 
-		// 如果引用计数<=1，可以物理删除
-		if file.RefCount <= 1 {
-			if err := service.schedulePhysicalDeletion(file.FileUuid); err != nil {
-				logger.Log().Error(fmt.Sprintf("[processExpiredFile] 调度物理删除失败: FileUuid=%s, Error=%v", file.FileUuid, err))
-			}
-		}
-	}
+	// 	// 如果引用计数<=1，可以物理删除
+	// 	if file.RefCount <= 1 {
+	// 		if err := service.schedulePhysicalDeletion(file.FileUuid); err != nil {
+	// 			logger.Log().Error(fmt.Sprintf("[processExpiredFile] 调度物理删除失败: FileUuid=%s, Error=%v", file.FileUuid, err))
+	// 		}
+	// 	}
+	// }
 
 	// 删除回收站记录
 	if err := tx.Where("user_id = ? AND is_restored = 0", userID).Delete(&model.RecycleBin{}).Error; err != nil {
@@ -234,19 +234,19 @@ func (service *RecycleBinService) processExpiredFile(recycleBin model.RecycleBin
 		}
 	}()
 
-	// 检查文件引用计数
-	var file model.File
-	if err := tx.Select("ref_count, file_uuid").Where("uuid = ?", recycleBin.FileID).First(&file).Error; err != nil {
-		tx.Rollback()
-		return fmt.Errorf("查询文件失败: %v", err)
-	}
+	// // 检查文件引用计数
+	// var file model.File
+	// if err := tx.Select("ref_count, file_uuid").Where("uuid = ?", recycleBin.FileID).First(&file).Error; err != nil {
+	// 	tx.Rollback()
+	// 	return fmt.Errorf("查询文件失败: %v", err)
+	// }
 
-	// 如果引用计数<=1，可以物理删除
-	if file.RefCount <= 1 {
-		if err := service.schedulePhysicalDeletion(file.FileUuid); err != nil {
-			logger.Log().Error(fmt.Sprintf("[processExpiredFile] 调度物理删除失败: FileUuid=%s, Error=%v", file.FileUuid, err))
-		}
-	}
+	// // 如果引用计数<=1，可以物理删除
+	// if file.RefCount <= 1 {
+	// 	if err := service.schedulePhysicalDeletion(file.FileUuid); err != nil {
+	// 		logger.Log().Error(fmt.Sprintf("[processExpiredFile] 调度物理删除失败: FileUuid=%s, Error=%v", file.FileUuid, err))
+	// 	}
+	// }
 
 	// 删除回收站记录
 	if err := tx.Delete(&recycleBin).Error; err != nil {
@@ -255,14 +255,6 @@ func (service *RecycleBinService) processExpiredFile(recycleBin model.RecycleBin
 	}
 
 	return tx.Commit().Error
-}
-
-// schedulePhysicalDeletion 调度物理删除
-func (service *RecycleBinService) schedulePhysicalDeletion(fileUuid string) error {
-	// 这里应该发送到延迟队列进行物理删除
-	// 暂时用日志记录
-	logger.Log().Info(fmt.Sprintf("[schedulePhysicalDeletion] 调度物理删除文件: FileUuid=%s", fileUuid))
-	return nil
 }
 
 // AutoCleanByCapacity 按容量自动清理
