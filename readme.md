@@ -1,13 +1,5 @@
 ## 如果您喜欢这个开源项目，不妨给它点个⭐️⭐️⭐️
 
-# 项目地址
-
-api接口地址: https://www.showdoc.cc/2466392510613440?page_id=10951794335914772
-
-前端项目地址: https://github.com/ChenMiaoQiu/go-cloud-disk-front
-
-项目在线地址: http://114.55.234.33/ (测试账户 username:1111 password:1111)
-
 # 介绍
 
 **go-cloud-disk**是一个使用Go语言实现的在线网盘系统，采用前后端分离技术，Go语言提供api进行数据支撑，前端页面采用vue3+element-plus进行编写。
@@ -53,14 +45,6 @@ GO-CLOUD-DISK
 
 ## 采用技术介绍
 
-前端：
-
-- 使用element-plus+vue快速构建前端页面
-- 使用pinia对用户信息进行存储，保证全局状态一致性
-- 使用pinia-plugin-persistedstate将token存储至localStorage，实现用户刷新后无需再次登录，优化用户体验
-- 使用vue-router实现多级路由跳转，完成单页面应用;对axios进行二次封装，完成前后端数据通讯
-- 利用路由守卫完成路由鉴权，确保非登录状态下无权访问预约及个人中心页面
-
 后端
 
 - 使用JWT进行身份验证
@@ -78,17 +62,6 @@ GO-CLOUD-DISK
 - 使用docker+portainer 将项目部署在腾讯云，阿里云平台
 
 ## 具体技术栈
-
-前端技术栈: 使用npm包进行管理
-
-- 基于TypeScript
-- Vue3
-- Pinia
-- Vue Router
-- Axios
-- Element-plus
-- pinia-plugin-persistedstate
-- ...
 
 后端技术栈:
 
