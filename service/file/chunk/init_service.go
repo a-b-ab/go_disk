@@ -32,12 +32,18 @@ type ChunkUploadInfo struct {
 	UserId         string    `json:"user_id"`         // 用户ID
 	CreatedAt      time.Time `json:"created_at"`      // 创建时间
 	UploadedChunks []int     `json:"uploaded_chunks"` // 已上传的分片列表
+	// 文件md5，前端传过来即可，支持秒传
 }
 
 func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.FileHeader, dst string) serializer.Response {
 	// 获取用户上传文件并保存到本地
 	var userStore model.FileStore
 	var err error
+
+	// 前端只需要传文件名和大小，文件目录，不需要传文件内容,md5值
+	// 这里只是为了检查用户存储空间是否足够
+	// 真实的文件内容会在分片上传时传输
+	// 检查用户存储空间是否足够
 
 	// 检查添加文件大小后当前大小是否超过最大限制
 	var isExceed bool
