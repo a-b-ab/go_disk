@@ -11,6 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
+// todo:网盘本身是多租户，要考虑租户隔离问题
+
 // RecycleBinService 回收站服务
 type RecycleBinService struct{}
 

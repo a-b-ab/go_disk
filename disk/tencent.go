@@ -64,7 +64,7 @@ func (cloud *TencentCloudDisk) GetUploadPresignedURL(userId string, filePath str
 }
 
 // getDownloadPresignedURL 根据文件键生成下载预签名URL
-// 废弃⚠️
+// 废弃
 func (cloud *TencentCloudDisk) getDownloadPresignedURL(key string) (string, error) {
 	client := cloud.getDefaultClient()
 	ctx := context.Background()
