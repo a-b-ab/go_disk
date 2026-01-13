@@ -2,12 +2,11 @@ package model
 
 import (
 	"context"
-	"errors"
 	"math/rand"
 	"time"
 
 	"go-cloud-disk/cache"
-	"go-cloud-disk/idgen"
+	"go-cloud-disk/utils"
 
 	"gorm.io/gorm"
 )
@@ -30,7 +29,7 @@ func (file *File) BeforeCreate(tx *gorm.DB) (err error) {
 	if file.ID == "" {
 		// 碰撞概率很低，但仍做一次轻量规避
 		for i := 0; i < 20; i++ {
-			id, e := idgen.RandomBase62(12)
+			id, e := utils.RandomBase62(12)
 			if e != nil {
 				return e
 			}
@@ -39,11 +38,11 @@ func (file *File) BeforeCreate(tx *gorm.DB) (err error) {
 			if e == nil {
 				continue
 			}
-			if errors.Is(e, gorm.ErrRecordNotFound) {
-				file.ID = id
-				break
+			if e != nil && e != gorm.ErrRecordNotFound {
+				return e
 			}
-			return e
+			file.ID = id
+			break
 		}
 		if file.ID == "" {
 			return gorm.ErrInvalidData

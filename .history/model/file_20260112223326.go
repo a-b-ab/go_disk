@@ -39,11 +39,11 @@ func (file *File) BeforeCreate(tx *gorm.DB) (err error) {
 			if e == nil {
 				continue
 			}
-			if errors.Is(e, gorm.ErrRecordNotFound) {
-				file.ID = id
-				break
+			if e != nil && !errors.Is(e, gorm.ErrRecordNotFound) {
+				return e
 			}
-			return e
+			file.ID = id
+			break
 		}
 		if file.ID == "" {
 			return gorm.ErrInvalidData

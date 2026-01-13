@@ -3,6 +3,7 @@ package file
 import (
 	"mime/multipart"
 
+	"go-cloud-disk/conf"
 	"go-cloud-disk/disk"
 	"go-cloud-disk/model"
 	"go-cloud-disk/serializer"
@@ -83,8 +84,11 @@ func (service *FileUploadService) UploadFile(userId string, file *multipart.File
 		FilePostfix:    extend,
 		FileUuid:       md5String,
 		FilePath:       filePath,
+		ObjectKey:      md5String + extend,
+		Bucket:         conf.BucketName,
 		ParentFolderId: service.FolderId,
 		Size:           file.Size,
+		RefCount:       1, // 新文件引用计数为1
 	}
 
 	t := model.DB.Begin()

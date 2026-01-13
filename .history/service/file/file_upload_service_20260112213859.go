@@ -85,6 +85,7 @@ func (service *FileUploadService) UploadFile(userId string, file *multipart.File
 		FilePath:       filePath,
 		ParentFolderId: service.FolderId,
 		Size:           file.Size,
+		RefCount:       1, // 新文件引用计数为1
 	}
 
 	t := model.DB.Begin()
