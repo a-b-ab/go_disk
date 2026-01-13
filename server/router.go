@@ -42,13 +42,16 @@ func NewRouter() *gin.Engine {
 			auth.POST("file/chunk/check", api.CheckChunks)
 			auth.POST("file/chunk/complete", api.CompleteChunkUpload)
 
-			// 智能标签相关接口
-			auth.POST("tag/auto", api.AutoTagFile)
-			// auth.POST("tag/:fileid/manual", api.ManualTagFile)
+			// 标签相关接口
+			auth.POST("tag/auto", api.AutoTagFile) // 腾讯云自动识别
+			auth.POST("tag", api.CreateTag)
+			auth.GET("tag", api.ListTag)
+			auth.GET("tag/:tagId", api.GetTag)
+			auth.PUT("tag/:tagId", api.UpdateTag)
+			auth.DELETE("tag/:tagId", api.DeleteTag)
 
 			// 回收站相关接口
 			auth.DELETE("file/:fileid/logical", api.LogicalDeleteFile)
-			auth.POST("file/recycle-bin/:recycleBinId/restore", api.RestoreFile)
 			auth.DELETE("file/recycle-bin/empty", api.EmptyRecycleBin)
 			auth.GET("file/recycle-bin/config", api.GetRecycleBinConfig)
 			auth.PUT("file/recycle-bin/config", api.UpdateRecycleBinConfig)

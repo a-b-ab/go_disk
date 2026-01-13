@@ -8,9 +8,7 @@ type User struct {
 	UserName             string `json:"username"`
 	NickName             string `json:"nickname"`
 	UserMainFileFolderID string `json:"filefolder"`
-	UserStoreId          string `json:"filestore"`
 	Status               string `json:"status"`
-	Avatar               string `json:"avatar"`
 }
 
 // BuildUser 返回用户序列化器
@@ -20,8 +18,6 @@ func BuildUser(user model.User) User {
 		UserName:             user.UserName,
 		NickName:             user.NickName,
 		Status:               user.Status,
-		Avatar:               user.Avatar,
-		UserStoreId:          user.UserFileStoreID,
 		UserMainFileFolderID: user.UserMainFileFolderID,
 	}
 }

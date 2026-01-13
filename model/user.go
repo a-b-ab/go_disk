@@ -17,8 +17,6 @@ type User struct {
 	PasswordDigest       string
 	NickName             string
 	Status               string
-	Avatar               string `gorm:"size:1000"`
-	UserFileStoreID      string
 	UserMainFileFolderID string
 }
 
@@ -84,7 +82,6 @@ func (user *User) CreateUser() error {
 		return fmt.Errorf("创建基础文件夹错误 %v", err)
 	}
 
-	user.UserFileStoreID = fileStoreId
 	user.UserMainFileFolderID = mainFileFolderId
 	if err := DB.Create(user).Error; err != nil {
 		return fmt.Errorf("创建用户错误 %v", err)

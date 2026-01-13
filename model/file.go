@@ -19,10 +19,10 @@ type File struct {
 	FileName       string // 真实文件名
 	FilePostfix    string
 	FileUuid       string `gorm:"unique;not null"` // 云端文件使用md5作为名称
-	FilePath       string // 云端文件的文件夹路径，用于保存分享文件
+	FilePath       string // 云端文件的文件夹路径，用于保存分享文件 todo:调式时看看 //这个待定 //定位 bucket/目录
 	ParentFolderId string
 	Size           int64 // 文件大小
-	IsDeleted      int   `gorm:"default:0"` // 逻辑删除标记 // 这个字段也废弃
+	DeletedAt      *time.Time `gorm:"column:deleted_at"`
 }
 
 // BeforeCreate 在插入数据库前创建文件ID（12位 Base62）

@@ -2,25 +2,21 @@ package model
 
 import (
 	"fmt"
-
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type FileStore struct {
-	Uuid        string `gorm:"primarykey"`
-	OwnerID     string `gorm:"column:owner_id"`
+	OwnerID     string `gorm:"column:owner_id;primarykey"`
 	CurrentSize int64
 	MaxSize     int64
 }
 
-// BeforeCreate 在插入数据库前创建uuid
-func (fileStore *FileStore) BeforeCreate(tx *gorm.DB) (err error) {
-	if fileStore.Uuid == "" {
-		fileStore.Uuid = uuid.NewString()
-	}
-	return
-}
+// // BeforeCreate 在插入数据库前创建uuid
+// func (fileStore *FileStore) BeforeCreate(tx *gorm.DB) (err error) {
+// 	if fileStore.Uuid == "" {
+// 		fileStore.Uuid = uuid.NewString()
+// 	}
+// 	return
+// }
 
 // AddCurrentSize 增加当前存储大小
 func (fileStore *FileStore) AddCurrentSize(size int64) (err error) {
@@ -37,7 +33,7 @@ func (fileStore *FileStore) SubCurrentSize(size int64) (err error) {
 	return nil
 }
 
-// CreateFileStore 根据用户ID创建新的文件存储，并返回其uuid或错误
+// CreateFileStore 根据用户ID创建新的文件存储
 func CreateFileStore(userId string) (string, error) {
 	fileStore := FileStore{
 		OwnerID:     userId,
@@ -47,5 +43,5 @@ func CreateFileStore(userId string) (string, error) {
 	if err := DB.Create(&fileStore).Error; err != nil {
 		return "", err
 	}
-	return fileStore.Uuid, nil
+	return fileStore.OwnerID, nil
 }

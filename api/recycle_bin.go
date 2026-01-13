@@ -17,16 +17,6 @@ func LogicalDeleteFile(c *gin.Context) {
 	c.JSON(200, res)
 }
 
-// RestoreFile 从回收站恢复文件
-func RestoreFile(c *gin.Context) {
-	recycleBinID := c.Param("recycleBinId")
-	userID := c.MustGet("userId").(string)
-
-	var service file.FileRefCountService
-	res := service.RestoreFile(userID, recycleBinID)
-	c.JSON(200, res)
-}
-
 // GetRecycleBinList 获取回收站列表
 func GetRecycleBinList(c *gin.Context) {
 	var service file.GetRecycleBinListService
