@@ -35,7 +35,8 @@ func (service *FileRefCountService) LogicalDeleteFile(userID, fileID string) ser
 	}()
 
 	// 2. todo:直接在库删除
-	now := time.Now()
+	// 只保留到“分钟”（秒/纳秒归零）
+	now := time.Now().Truncate(time.Minute)
 	if err := tx.Model(&file).Updates(map[string]interface{}{
 		"deleted_at": &now,
 	}).Error; err != nil {

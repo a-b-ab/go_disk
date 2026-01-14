@@ -8,7 +8,9 @@ type User struct {
 	UserName             string `json:"username"`
 	NickName             string `json:"nickname"`
 	UserMainFileFolderID string `json:"filefolder"`
-	Status               string `json:"status"`
+	// FileStore 的 ID。当前实现中 FileStore 以 OwnerID（即用户ID）作为主键，因此这里直接返回用户ID。
+	UserFileStoreID string `json:"filestore"`
+	Status          string `json:"status"`
 }
 
 // BuildUser 返回用户序列化器
@@ -19,6 +21,7 @@ func BuildUser(user model.User) User {
 		NickName:             user.NickName,
 		Status:               user.Status,
 		UserMainFileFolderID: user.UserMainFileFolderID,
+		UserFileStoreID:      user.Uuid,
 	}
 }
 

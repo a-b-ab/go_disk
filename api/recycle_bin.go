@@ -10,10 +10,22 @@ import (
 // 逻辑删除文件（移到回收站）
 func LogicalDeleteFile(c *gin.Context) {
 	fileID := c.Param("fileid")
-	userID := c.MustGet("userId").(string)
+	userID := c.MustGet("UserId").(string)
 
-	var service file.FileRefCountService
-	res := service.LogicalDeleteFile(userID, fileID)
+	// 当前项目回收站通过 file.deleted_at 实现：
+	// 逻辑删除与“删除”统一为软删除（写入 deleted_at），避免出现一处软删一处硬删的行为差异。
+	var service file.FileDeleteService
+	res := service.FileDelete(userID, fileID)
+	c.JSON(200, res)
+}
+
+// RestoreFile 从回收站恢复文件
+func RestoreFile(c *gin.Context) {
+	fileID := c.Param("fileid")
+	userID := c.MustGet("UserId").(string)
+
+	var service file.RecycleBinService
+	res := service.RestoreFile(userID, fileID)
 	c.JSON(200, res)
 }
 

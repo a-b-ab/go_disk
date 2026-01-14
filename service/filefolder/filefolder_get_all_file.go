@@ -19,7 +19,8 @@ func (service *FileFolderGetAllFileService) GetAllFile(userId string, fileFolder
 	}
 
 	var files []model.File
-	if err := model.DB.Where("parent_folder_id = ?", fileFolderID).Find(&files).Error; err != nil {
+	// 默认不返回已删除（deleted_at 不为空）的文件
+	if err := model.DB.Where("parent_folder_id = ? AND deleted_at IS NULL", fileFolderID).Find(&files).Error; err != nil {
 		logger.Log().Error("[FileFolderGetAllFileService.GetAllFile] 获取文件列表失败: ", err)
 		return serializer.DBErr("", err)
 	}

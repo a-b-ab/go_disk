@@ -52,6 +52,8 @@ func NewRouter() *gin.Engine {
 
 			// 回收站相关接口
 			auth.DELETE("file/:fileid/logical", api.LogicalDeleteFile)
+			auth.PUT("file/:fileid/restore", api.RestoreFile)
+			auth.GET("file/recycle-bin", api.GetRecycleBinList)
 			auth.DELETE("file/recycle-bin/empty", api.EmptyRecycleBin)
 			auth.GET("file/recycle-bin/config", api.GetRecycleBinConfig)
 			auth.PUT("file/recycle-bin/config", api.UpdateRecycleBinConfig)
