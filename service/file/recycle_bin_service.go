@@ -166,6 +166,8 @@ func ensureRecycleBinConfig(userID string) (model.RecycleBinConfig, error) {
 	if err := model.DB.Where("user_id = ?", userID).First(&config).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			config = model.RecycleBinConfig{
+				// 使用 userID 作为主键，避免 string 主键为空导致的全局冲突
+				ID:              userID,
 				UserID:          userID,
 				AutoCleanDays:   30,
 				EnableAutoClean: 1,
@@ -176,6 +178,16 @@ func ensureRecycleBinConfig(userID string) (model.RecycleBinConfig, error) {
 			return config, nil
 		}
 		return config, err
+	}
+	// 历史数据兼容：早期版本可能创建了空主键，导致其他用户创建配置失败。
+	// 这里自动把 id 修正为 userID。
+	if config.ID == "" {
+		if err := model.DB.Model(&model.RecycleBinConfig{}).
+			Where("user_id = ?", userID).
+			Update("id", userID).Error; err != nil {
+			return config, err
+		}
+		config.ID = userID
 	}
 	return config, nil
 }
