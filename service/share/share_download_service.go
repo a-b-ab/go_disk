@@ -32,8 +32,9 @@ func (service *ShareDownloadService) GetDownloadUrl(shareId string) serializer.R
 		return serializer.DBErr("文件不存在", err)
 	}
 
-	// 生成预签名下载URL
-	downloadUrl, err := disk.BaseCloudDisk.GetDownloadURL(file.FilePath, file.FileUuid)
+	// 生成预签名下载URL（使用真实后缀，避免 GetDownloadURL 硬编码 .png 导致 NoSuchKey）
+	fileName := file.FileUuid + "." + file.FilePostfix
+	downloadUrl, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", fileName)
 	if err != nil {
 		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 生成预签名下载URL失败: ", err)
 		return serializer.DBErr("生成预签名下载URL失败", err)

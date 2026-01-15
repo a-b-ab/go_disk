@@ -45,7 +45,8 @@ func (service *ShareCreateService) CreateShare(userId string) serializer.Respons
 		return serializer.DBErr("", err)
 	}
 	// 生成预签名下载URL
-	downloadUrl, err := disk.BaseCloudDisk.GetDownloadURL(shareFile.FilePath, shareFile.FileUuid)
+	fileName := shareFile.FileUuid + "." + shareFile.FilePostfix
+	downloadUrl, err := disk.BaseCloudDisk.GetDownloadPresignedURL(shareFile.Owner, "", fileName)
 	if err != nil {
 		logger.Log().Error("[ShareCreateService.CreateShare] 生成下载链接失败: ", err)
 		return serializer.DBErr("", err)
