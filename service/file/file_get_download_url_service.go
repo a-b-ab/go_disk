@@ -28,7 +28,9 @@ func (service *FileGetDownloadURLService) GetDownloadURL(userId string, fileid s
 	}
 
 	fileName := file.FileUuid + "." + file.FilePostfix
-	url, err := disk.BaseCloudDisk.GetObjectURL(file.FilePath, "", fileName)
+	// 使用预签名URL，避免桶为私有时 ObjectURL 无法直接访问；
+	// 同时通过预签名的 response-content-disposition=inline 支持浏览器直接预览图片等资源。
+	url, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", fileName)
 	if err != nil {
 		logger.Log().Error("[FileGetDownloadURLService.GetDownloadURL] 获取下载URL失败: ", err)
 		return serializer.InternalErr("", err)

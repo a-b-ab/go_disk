@@ -13,7 +13,6 @@ func migration() {
 	_ = DB.AutoMigrate(&Share{})
 	_ = DB.AutoMigrate(&Tag{})
 	_ = DB.AutoMigrate(&FileTag{})
-	_ = DB.AutoMigrate(&RecycleBin{})
 	_ = DB.AutoMigrate(&RecycleBinConfig{})
 	initSuperAdmin()
 }

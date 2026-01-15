@@ -20,9 +20,3 @@ func AutoCleanExpiredFiles() error {
 	var service file.RecycleBinService
 	return service.AutoCleanExpiredFiles()
 }
-
-// AutoCleanByCapacity 按容量自动清理
-func AutoCleanByCapacity() error {
-	var service file.RecycleBinService
-	return service.AutoCleanByCapacity()
-}

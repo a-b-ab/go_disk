@@ -39,9 +39,9 @@ func (share *Share) SetEmptyShare() {
 }
 
 // BeforeCreate 在插入数据库前创建uuid
-func (file *Share) BeforeCreate(tx *gorm.DB) (err error) {
-	if file.Uuid == "" {
-		file.Uuid = uuid.New().String()
+func (share *Share) BeforeCreate(tx *gorm.DB) (err error) {
+	if share.Uuid == "" {
+		share.Uuid = uuid.New().String()
 	}
 	return
 }
@@ -53,7 +53,8 @@ func (share *Share) DownloadURL() (string, error) {
 		return "", fmt.Errorf("构建下载链接时查找用户文件失败 %v", err)
 	}
 
-	url, err := disk.BaseCloudDisk.GetObjectURL(file.FilePath, "", file.FileUuid+"."+file.FilePostfix)
+	// 分享下载同样使用预签名URL，避免桶为私有时无法访问
+	url, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", file.FileUuid+"."+file.FilePostfix)
 	if err != nil {
 		return "", fmt.Errorf("获取分享下载链接时获取对象URL失败，%v", err)
 	}

@@ -45,10 +45,6 @@ func CronJob() {
 	if _, err := Cron.AddFunc("0 2 * * *", func() { Run("自动清理过期文件", AutoCleanExpiredFiles) }); err != nil {
 		logger.Log().Error("设置自动清理过期文件任务失败", err)
 	}
-	// 每小时清理超容量文件
-	if _, err := Cron.AddFunc("@hourly", func() { Run("按容量自动清理", AutoCleanByCapacity) }); err != nil {
-		logger.Log().Error("设置按容量自动清理任务失败", err)
-	}
 
 	Cron.Start()
 }

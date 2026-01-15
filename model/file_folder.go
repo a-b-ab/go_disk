@@ -8,7 +8,7 @@ import (
 )
 
 type FileFolder struct {
-	Uuid           string `gorm:"primarykey"` // 主键，自动生成
+	Uuid           string `gorm:"primarykey"` // 主键，自动生成，一个人可能有多个文件夹
 	FileFolderName string // 文件夹名称
 	ParentFolderID string // 父文件ID，支持层级结构
 	FileStoreID    string // 关联的存储空间

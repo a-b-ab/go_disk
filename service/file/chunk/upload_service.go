@@ -31,6 +31,8 @@ func (service *FileChunkUploadService) UploadChunk(userId string, chunkFile *mul
 		return serializer.ParamsErr("UploadIdNotFound", err)
 	}
 
+	// 前端需要传md5和后端计算的md5进行对比，确保分片完整性
+
 	// 2. 验证用户
 	if uploadInfo.UserId != userId {
 		return serializer.NotAuthErr("没有权限")

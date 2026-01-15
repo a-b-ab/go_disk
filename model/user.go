@@ -1,12 +1,14 @@
 package model
 
 import (
+	"errors"
 	"fmt"
 
 	"go-cloud-disk/conf"
+	"go-cloud-disk/idgen"
 
-	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -15,8 +17,6 @@ type User struct {
 	PasswordDigest       string
 	NickName             string
 	Status               string
-	Avatar               string `gorm:"size:1000"`
-	UserFileStoreID      string
 	UserMainFileFolderID string
 }
 
@@ -53,7 +53,26 @@ func (user *User) CheckPassword(password string) bool {
 
 // CreateUser 在数据库中创建用户，并为用户绑定一个文件存储
 func (user *User) CreateUser() error {
-	user.Uuid = uuid.New().String()
+	// 使用 6 位 Base62 短ID 作为用户ID（通过数据库唯一性兜底，并在创建前做一次碰撞规避）
+	for i := 0; i < 20; i++ {
+		id, err := idgen.RandomBase62(6)
+		if err != nil {
+			return fmt.Errorf("生成用户ID失败 %v", err)
+		}
+		var exist User
+		err = DB.Select("uuid").Where("uuid = ?", id).First(&exist).Error
+		if err == nil {
+			continue // 碰撞，重试
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			user.Uuid = id
+			break
+		}
+		return fmt.Errorf("检查用户ID唯一性失败 %v", err)
+	}
+	if user.Uuid == "" {
+		return fmt.Errorf("生成用户ID失败：重试次数过多")
+	}
 	fileStoreId, err := CreateFileStore(user.Uuid)
 	if err != nil {
 		return fmt.Errorf("创建文件存储错误 %v", err)
@@ -63,7 +82,25 @@ func (user *User) CreateUser() error {
 		return fmt.Errorf("创建基础文件夹错误 %v", err)
 	}
 
-	user.UserFileStoreID = fileStoreId
+	// 为用户初始化回收站配置（确保定时任务能覆盖到“从未打开回收站页面”的用户）
+	// 说明：主键 ID 使用 userID，避免空字符串主键导致冲突。
+	var cfg RecycleBinConfig
+	if err := DB.Where("user_id = ?", user.Uuid).First(&cfg).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cfg = RecycleBinConfig{
+				ID:              user.Uuid,
+				UserID:          user.Uuid,
+				AutoCleanDays:   30,
+				EnableAutoClean: 1,
+			}
+			if err := DB.Create(&cfg).Error; err != nil {
+				return fmt.Errorf("创建回收站配置错误 %v", err)
+			}
+		} else {
+			return fmt.Errorf("检查回收站配置错误 %v", err)
+		}
+	}
+
 	user.UserMainFileFolderID = mainFileFolderId
 	if err := DB.Create(user).Error; err != nil {
 		return fmt.Errorf("创建用户错误 %v", err)

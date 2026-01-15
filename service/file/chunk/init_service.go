@@ -32,12 +32,18 @@ type ChunkUploadInfo struct {
 	UserId         string    `json:"user_id"`         // 用户ID
 	CreatedAt      time.Time `json:"created_at"`      // 创建时间
 	UploadedChunks []int     `json:"uploaded_chunks"` // 已上传的分片列表
+	// todo:文件md5，前端传过来即可，支持秒传
 }
 
 func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.FileHeader, dst string) serializer.Response {
 	// 获取用户上传文件并保存到本地
 	var userStore model.FileStore
 	var err error
+
+	// 前端只需要传文件名和大小，文件目录，不需要传文件内容,md5值
+	// 这里只是为了检查用户存储空间是否足够
+	// 真实的文件内容会在分片上传时传输
+	// 检查用户存储空间是否足够
 
 	// 检查添加文件大小后当前大小是否超过最大限制
 	var isExceed bool
@@ -48,6 +54,26 @@ func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.
 	if isExceed {
 		return serializer.ParamsErr("ExceedStoreLimit", nil)
 	}
+
+	// // todo:秒传判断+md5存储到file文件
+	// existFile,err := model.GetFileByMd5(service.FileMd5)
+	// if err == nil && existFile != nil {
+
+	// 	// 建立用户文件关系（逻辑秒传）
+	// 	if err := model.CreateUserFile(
+	// 		userId,
+	// 		existFile.Id,
+	// 		service.FolderId,
+	// 	); err != nil {
+	// 		return serializer.DBErr("", err)
+	// 	}
+
+	// 	// 直接返回，不进入分片流程
+	// 	return serializer.Success(map[string]interface{}{
+	// 		"instant": true,
+	// 		"file_id": existFile.Id,
+	// 	})
+	// }
 
 	// 计算分片数
 	totalChunks := int((file.Size + ChunkSize - 1) / ChunkSize)
@@ -61,6 +87,7 @@ func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.
 		FileName:       file.Filename,
 		FileSize:       file.Size,
 		ChunkSize:      ChunkSize,
+		// 文件md5
 		TotalChunks:    totalChunks,
 		FolderId:       service.FolderId,
 		UserId:         userId,

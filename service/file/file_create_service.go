@@ -48,7 +48,7 @@ func (service *FileCreateService) CreateFile(owner string) serializer.Response {
 		FileUuid:       service.FileUuid,
 		ParentFolderId: service.ParentFolderId,
 		Size:           service.Size,
-		FilePath:       owner,
+		// FilePath:       owner,
 	}
 
 	if err = model.DB.Create(&file).Error; err != nil {

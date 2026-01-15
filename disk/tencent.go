@@ -64,11 +64,17 @@ func (cloud *TencentCloudDisk) GetUploadPresignedURL(userId string, filePath str
 }
 
 // getDownloadPresignedURL 根据文件键生成下载预签名URL
-// 废弃⚠️
+// 废弃
 func (cloud *TencentCloudDisk) getDownloadPresignedURL(key string) (string, error) {
 	client := cloud.getDefaultClient()
 	ctx := context.Background()
-	presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, cloud.secretId, cloud.secretKey, time.Hour, nil)
+	// 通过 response-content-disposition=inline 让浏览器可以直接预览图片等资源（否则可能被强制当作附件下载）
+	opt := &cos.PresignedURLOptions{
+		Query:  &url.Values{},
+		Header: &http.Header{},
+	}
+	opt.Query.Set("response-content-disposition", "inline")
+	presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, cloud.secretId, cloud.secretKey, time.Hour, opt)
 	if err != nil {
 		return "", fmt.Errorf("创建下载预签名URL错误：%v", err)
 	}
