@@ -74,7 +74,8 @@ func (cloud *TencentCloudDisk) getDownloadPresignedURL(key string) (string, erro
 		Header: &http.Header{},
 	}
 	opt.Query.Set("response-content-disposition", "inline")
-	presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, cloud.secretId, cloud.secretKey, time.Hour, opt)
+	// 预签名有效期：延长到 24h，减少“链接失效”体验问题（需要时可再做成配置项）
+	presignedURL, err := client.Object.GetPresignedURL(ctx, http.MethodGet, key, cloud.secretId, cloud.secretKey, 24*time.Hour, opt)
 	if err != nil {
 		return "", fmt.Errorf("创建下载预签名URL错误：%v", err)
 	}

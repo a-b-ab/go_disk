@@ -9,7 +9,7 @@ import (
 
 // ShareDownloadService 分享下载服务
 type ShareDownloadService struct {
-	ShareId string `json:"shareid" form:"shareid""` // 分享ID
+	ShareId string `json:"shareid" form:"shareid"` // 分享ID
 }
 
 type shareDownloadResponse struct {
@@ -24,6 +24,10 @@ func (service *ShareDownloadService) GetDownloadUrl(shareId string) serializer.R
 		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 查找分享失败: ", err)
 		return serializer.DBErr("分享不存在", err)
 	}
+	// 审核通过后才允许下载
+	if share.AuditStatus != 1 {
+		return serializer.ParamsErr("分享未审核通过", nil)
+	}
 
 	// 查找对应的文件信息
 	var file model.File
@@ -34,7 +38,12 @@ func (service *ShareDownloadService) GetDownloadUrl(shareId string) serializer.R
 
 	// 生成预签名下载URL（使用真实后缀，避免 GetDownloadURL 硬编码 .png 导致 NoSuchKey）
 	fileName := file.FileUuid + "." + file.FilePostfix
-	downloadUrl, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", fileName)
+	// FilePath 为空时（历史数据/预签名入库漏写），回退到 Owner
+	prefix := file.FilePath
+	if prefix == "" {
+		prefix = file.Owner
+	}
+	downloadUrl, err := disk.BaseCloudDisk.GetDownloadPresignedURL(prefix, "", fileName)
 	if err != nil {
 		logger.Log().Error("[ShareDownloadService.GetDownloadUrl] 生成预签名下载URL失败: ", err)
 		return serializer.DBErr("生成预签名下载URL失败", err)

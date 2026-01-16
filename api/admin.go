@@ -69,6 +69,19 @@ func AdminDeleteShare(c *gin.Context) {
 	c.JSON(200, res)
 }
 
+// AdminAuditShare 管理员审核分享
+func AdminAuditShare(c *gin.Context) {
+	var service admin.ShareAuditService
+	if err := c.ShouldBind(&service); err != nil {
+		c.JSON(200, serializer.ErrorResponse(err))
+		return
+	}
+	shareId := c.Param("shareId")
+	reviewer := c.MustGet("UserId").(string)
+	res := service.AuditShare(shareId, reviewer)
+	c.JSON(200, res)
+}
+
 // AdminDeleteFile 删除数据库中相同md5码的所有文件，不删除云端文件
 func AdminDeleteFile(c *gin.Context) {
 	var service admin.FileDeleteService
@@ -93,5 +106,15 @@ func AdminGetFileStoreInfo(c *gin.Context) {
 
 	userId := c.Param("userId")
 	res := service.FileStoreGetInfo(userId)
+	c.JSON(200, res)
+}
+
+// AdminGetFileDownloadURL 管理员获取文件预览/下载URL
+func AdminGetFileDownloadURL(c *gin.Context) {
+	fileId := c.Param("fileId")
+	operStatus := c.MustGet("Status").(string)
+
+	var service admin.FileGetDownloadURLService
+	res := service.GetDownloadURL(operStatus, fileId)
 	c.JSON(200, res)
 }

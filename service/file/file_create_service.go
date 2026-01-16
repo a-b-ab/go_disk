@@ -48,7 +48,9 @@ func (service *FileCreateService) CreateFile(owner string) serializer.Response {
 		FileUuid:       service.FileUuid,
 		ParentFolderId: service.ParentFolderId,
 		Size:           service.Size,
-		// FilePath:       owner,
+		// 对象存储的“用户目录前缀”。预签名上传路径固定为 user/<owner>/...，因此这里必须写 owner
+		// 否则后续预览/下载在秒传/去重逻辑下会出现 NoSuchKey（找不到对象）。
+		FilePath: owner,
 	}
 
 	if err = model.DB.Create(&file).Error; err != nil {

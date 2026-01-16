@@ -114,7 +114,8 @@ func processAutoTag(fileID, userID string) error {
 
 	// 生成预签名下载URL
 	fileName := file.FileUuid + "." + file.FilePostfix
-	downLoadURL, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", fileName)
+	// 注意：FilePath 当前存的是“云端对象所在的用户目录前缀”（用于秒传/去重场景），不能用 Owner。
+	downLoadURL, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.FilePath, "", fileName)
 	if err != nil {
 		logger.Log().Error("[processAutoTag] 生成预签名下载URL失败: ", err)
 		return err

@@ -12,6 +12,9 @@ type Share struct {
 	View        int64  `json:"view"`
 	DownloadURL string `json:"downloadurl,omitempty"`
 	Size        int64  `json:"filesize"`
+	AuditStatus int    `json:"audit_status"`
+	// 驳回原因（仅当 audit_status=2 时有意义）
+	RejectReason string `json:"reject_reason,omitempty"`
 }
 
 func BuildShare(share model.Share) Share {
@@ -24,6 +27,8 @@ func BuildShare(share model.Share) Share {
 		View:        share.ViewCount(),
 		SharingTime: share.SharingTime,
 		Size:        share.Size,
+		AuditStatus: share.AuditStatus,
+		RejectReason: share.RejectReason,
 	}
 }
 
@@ -38,6 +43,8 @@ func BuildShareWithDownloadUrl(share model.Share, url string) Share {
 		SharingTime: share.SharingTime,
 		DownloadURL: url,
 		Size:        share.Size,
+		AuditStatus: share.AuditStatus,
+		RejectReason: share.RejectReason,
 	}
 }
 

@@ -3,7 +3,6 @@ package share
 import (
 	"time"
 
-	"go-cloud-disk/disk"
 	"go-cloud-disk/model"
 	"go-cloud-disk/serializer"
 	"go-cloud-disk/utils"
@@ -19,7 +18,8 @@ type ShareCreateService struct {
 // createShareSuccessResponse 创建分享成功响应结构体
 type createShareSuccessResponse struct {
 	ShareId     string `json:"shareid"`     // 分享ID
-	DownLoadUrl string `json:"downloadurl"` // 预签名下载链接
+	DownLoadUrl string `json:"downloadurl"` // 预签名下载链接（审核通过前为空）
+	AuditStatus int    `json:"audit_status"`
 }
 
 // CreateShare 创建文件分享
@@ -39,21 +39,21 @@ func (service *ShareCreateService) CreateShare(userId string) serializer.Respons
 		Size:        shareFile.Size,
 		FileName:    shareFile.FileName + "." + shareFile.FilePostfix,
 		SharingTime: time.Unix(time.Now().Unix(), 0).Format(utils.DefaultTimeTemplate),
+		// 默认待审核（管理员审核通过后才可访问下载）
+		AuditStatus: 0,
 	}
 	if err := model.DB.Create(&newShare).Error; err != nil {
 		logger.Log().Error("[ShareCreateService.CreateShare] 创建分享失败: ", err)
 		return serializer.DBErr("", err)
 	}
-	// 生成预签名下载URL
-	fileName := shareFile.FileUuid + "." + shareFile.FilePostfix
-	downloadUrl, err := disk.BaseCloudDisk.GetDownloadPresignedURL(shareFile.Owner, "", fileName)
-	if err != nil {
-		logger.Log().Error("[ShareCreateService.CreateShare] 生成下载链接失败: ", err)
-		return serializer.DBErr("", err)
-	}
+	// 兼容旧库：如果数据库层 audit_status 默认值仍是 1（已通过），这里强制把新建分享改回待审核。
+	_ = model.DB.Model(&model.Share{}).Where("uuid = ?", newShare.Uuid).Update("audit_status", 0).Error
+	// 审核通过前不返回下载链接
+	downloadUrl := ""
 
 	return serializer.Success(createShareSuccessResponse{
 		ShareId:     newShare.Uuid,
 		DownLoadUrl: downloadUrl,
+		AuditStatus: newShare.AuditStatus,
 	})
 }

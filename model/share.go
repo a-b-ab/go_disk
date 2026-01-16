@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"go-cloud-disk/cache"
 	"go-cloud-disk/disk"
@@ -20,6 +21,11 @@ type Share struct {
 	Title       string
 	Size        int64
 	SharingTime string
+	// AuditStatus 审核状态：0=待审核，1=已通过，2=已驳回
+	AuditStatus  int        `gorm:"not null;default:0"`
+	Reviewer     string     // 审核人（管理员用户ID）
+	ReviewedAt   *time.Time // 审核时间
+	RejectReason string     // 驳回原因
 }
 
 // SetEmptyShare 设置空分享,表示分享链接已失效
@@ -54,7 +60,11 @@ func (share *Share) DownloadURL() (string, error) {
 	}
 
 	// 分享下载同样使用预签名URL，避免桶为私有时无法访问
-	url, err := disk.BaseCloudDisk.GetDownloadPresignedURL(file.Owner, "", file.FileUuid+"."+file.FilePostfix)
+	prefix := file.FilePath
+	if prefix == "" {
+		prefix = file.Owner
+	}
+	url, err := disk.BaseCloudDisk.GetDownloadPresignedURL(prefix, "", file.FileUuid+"."+file.FilePostfix)
 	if err != nil {
 		return "", fmt.Errorf("获取分享下载链接时获取对象URL失败，%v", err)
 	}
@@ -86,6 +96,7 @@ func (share *Share) AddViewCount() {
 }
 
 // SaveShareInfoToRedis 保存分享信息到Redis
+// 注意：不要缓存预签名 downloadUrl（会过期导致“COS 失效”），下载链接应在请求时动态生成。
 func (share *Share) SaveShareInfoToRedis(downloadUrl string) error {
 	ctx := context.Background()
 	// 如果Owner不为空，说明函数已经写入到Redis中
@@ -103,7 +114,7 @@ func (share *Share) SaveShareInfoToRedis(downloadUrl string) error {
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "Title", share.Title)
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "Size", share.Size)
 	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "SharingTime", share.SharingTime)
-	saveShare.HSet(ctx, cache.ShareInfoKey(share.Uuid), "downloadUrl", downloadUrl)
+	_ = downloadUrl // 兼容旧签名：不再写入 downloadUrl
 	_, err := saveShare.Exec(ctx)
 	if err != nil {
 		return err
@@ -132,8 +143,8 @@ func (share *Share) GetShareInfoFromRedis() string {
 	share.Title = shareInfo["Title"]
 	share.Size, _ = strconv.ParseInt(shareInfo["Size"], 10, 64)
 	share.SharingTime = shareInfo["SharingTime"]
-
-	return shareInfo["downloadUrl"]
+	// 预签名 downloadUrl 不应被缓存；应在调用处动态生成
+	return ""
 }
 
 // CheckRedisExistsShare 使用标题信息检查，因为当分享信息存储到Redis时标题肯定存在
