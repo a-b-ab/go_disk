@@ -46,7 +46,7 @@ func (service *FileRefCountService) LogicalDeleteFile(userID, fileID string) ser
 	}
 
 	// 4. 更新用户存储空间
-	if err := tx.Model(&model.FileStore{}).Where("user_id = ?", userID).UpdateColumn("current_size", gorm.Expr("current_size - ?", file.Size)).Error; err != nil {
+	if err := tx.Model(&model.FileStore{}).Where("owner_id = ?", userID).UpdateColumn("current_size", gorm.Expr("current_size - ?", file.Size)).Error; err != nil {
 		tx.Rollback()
 		logger.Log().Error("[LogicalDeleteFile] 更新用户存储空间失败: ", err)
 		return serializer.DBErr("更新用户存储空间失败", err)

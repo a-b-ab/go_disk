@@ -21,6 +21,8 @@ func initPolicy() {
 			{model.StatusActiveUser, "share*", "*", "allow"},
 			{model.StatusActiveUser, "file*", "*", "allow"},
 			{model.StatusActiveUser, "filefolder*", "*", "allow"},
+			// 标签（图片标签）
+			{model.StatusActiveUser, "tag*", "*", "allow"},
 			{model.StatusActiveUser, "rank*", "GET", "allow"},
 			// 管理员用户可以修改用户状态
 			{model.StatusAdmin, "admin/user*", "*", "allow"},

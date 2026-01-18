@@ -78,9 +78,21 @@ func AddTagToFile(fileID, tagID string) error {
 // GetFilesByTag 根据标签获取文件列表
 func GetFilesByTag(tagName string, userID string, limit, offset int) ([]File, error) {
 	var files []File
-	err := DB.Joins("JOIN file_tags ON files.uuid = file_tags.file_id").
+	// file_tags.file_id 关联的是 files.file_uuid（md5），不是 files.uuid（12位短ID）
+	err := DB.Joins("JOIN file_tags ON files.file_uuid = file_tags.file_id").
 		Joins("JOIN tags ON file_tags.tag_id = tags.id").
-		Where("tags.name = ? AND files.owner = ?", tagName, userID).
+		Where("tags.name = ? AND files.owner = ? AND files.deleted_at IS NULL", tagName, userID).
+		Limit(limit).
+		Offset(offset).
+		Find(&files).Error
+	return files, err
+}
+
+// GetFilesByTagID 根据 tag_id 获取文件列表（用于标签与文件联动）
+func GetFilesByTagID(tagID string, userID string, limit, offset int) ([]File, error) {
+	var files []File
+	err := DB.Joins("JOIN file_tags ON files.file_uuid = file_tags.file_id").
+		Where("file_tags.tag_id = ? AND files.owner = ? AND files.deleted_at IS NULL", tagID, userID).
 		Limit(limit).
 		Offset(offset).
 		Find(&files).Error

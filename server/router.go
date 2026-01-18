@@ -31,10 +31,16 @@ func NewRouter() *gin.Engine {
 			auth.GET("user", api.UserMyInfo)
 			auth.PUT("user", api.UpdateUserInfo)
 
+			// 文件列表（全量，标签页用）
+			auth.GET("file/all", api.ListAllFiles)
 			auth.GET("file/:fileid", api.GetDownloadURL)
 			auth.POST("file", api.UploadFile)
 			auth.PUT("file", api.UpdateFile)
 			auth.DELETE("file/:fileid", api.DeleteFile)
+			// 图片标签（文件-标签关联）
+			auth.GET("file/:fileid/tag", api.GetFileTags)
+			auth.POST("file/:fileid/tag", api.BindFileTag)
+			auth.DELETE("file/:fileid/tag/:tagId", api.UnbindFileTag)
 
 			// 分片上传相关接口
 			auth.POST("file/chunk/init", api.InitChunkUpload)
@@ -47,6 +53,7 @@ func NewRouter() *gin.Engine {
 			auth.POST("tag", api.CreateTag)
 			auth.GET("tag", api.ListTag)
 			auth.GET("tag/:tagId", api.GetTag)
+			auth.GET("tag/:tagId/files", api.GetTagFiles)
 			auth.PUT("tag/:tagId", api.UpdateTag)
 			auth.DELETE("tag/:tagId", api.DeleteTag)
 

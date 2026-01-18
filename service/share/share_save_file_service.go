@@ -31,7 +31,8 @@ func (service *ShareSaveFileService) ShareSaveFile(userId string) serializer.Res
 
 	// 从数据库获取用户文件存储信息
 	var targetFileStore model.FileStore
-	if err := model.DB.Where("uuid = ?", targetFilefolder.FileStoreID).Find(&targetFileStore).Error; err != nil {
+	// 兼容不同历史字段：FileStoreID 可能是 uuid 或 owner_id
+	if err := model.DB.Where("owner_id = ? OR uuid = ?", userId, targetFilefolder.FileStoreID).First(&targetFileStore).Error; err != nil {
 		logger.Log().Error("[ShareSaveFileService.ShareSaveFile] 查找文件存储信息失败: ", err)
 		return serializer.DBErr("", err)
 	}

@@ -57,3 +57,12 @@ func DeleteTag(c *gin.Context) {
 	tagID := c.Param("tagId")
 	c.JSON(200, tagService.TagDeleteService{}.DeleteTag(tagID))
 }
+
+// GetTagFiles 获取某个标签下的文件列表（联动）
+func GetTagFiles(c *gin.Context) {
+	userID := c.MustGet("UserId").(string)
+	tagID := c.Param("tagId")
+	var service tagService.TagFilesService
+	_ = c.ShouldBindQuery(&service)
+	c.JSON(200, service.GetTagFiles(userID, tagID))
+}

@@ -2,9 +2,10 @@ package auth
 
 import (
 	"go-cloud-disk/conf"
+	appmodel "go-cloud-disk/model"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/casbin/casbin/v2/model"
+	casbinmodel "github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 )
 
@@ -22,7 +23,7 @@ func InitCasbin() {
 
 	// 从字符串创建RBAC模型配置
 	// 定义了请求格式、策略格式、角色继承、策略效果和匹配规则
-	m, err := model.NewModelFromString(`
+	m, err := casbinmodel.NewModelFromString(`
 	[request_definition] 
 	r = sub, obj, act
 	
@@ -56,5 +57,22 @@ func InitCasbin() {
 	// 测试管理员是否有访问用户管理接口的权限
 	if ok, _ := Casbin.Enforce("common_admin", "admin/user", "POST"); !ok {
 		initPolicy() // 初始化基础权限策略
+	}
+
+	// 兼容：老库里已有策略时，initPolicy() 不会被调用，导致新接口（如 tag*）缺权限。
+	// 这里补齐新增的策略项，避免一直报 "not auth"。
+	ensurePolicies := [][]string{
+		{appmodel.StatusActiveUser, "tag*", "*", "allow"},
+	}
+	changed := false
+	for _, p := range ensurePolicies {
+		has, _ := Casbin.HasPolicy(p)
+		if !has {
+			_, _ = Casbin.AddPolicy(p)
+			changed = true
+		}
+	}
+	if changed {
+		Casbin.SavePolicy()
 	}
 }
