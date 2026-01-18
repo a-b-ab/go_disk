@@ -3,7 +3,6 @@ package chunk
 import (
 	"context"
 	"encoding/json"
-	"mime/multipart"
 	"time"
 
 	"go-cloud-disk/cache"
@@ -19,7 +18,10 @@ const (
 )
 
 type ChunkInitService struct {
-	FolderId string `form:"filefolder" json:"filefolder" binding:"required"` // 文件夹ID
+	FolderId  string `form:"filefolder" json:"filefolder" binding:"required"`   // 文件夹ID
+	FileName  string `form:"file_name" json:"file_name" binding:"required"`     // 文件名（含后缀）
+	FileSize  int64  `form:"file_size" json:"file_size" binding:"required"`     // 文件总大小（bytes）
+	// todo: 文件md5，前端传过来即可，支持秒传
 }
 
 type ChunkUploadInfo struct {
@@ -32,22 +34,20 @@ type ChunkUploadInfo struct {
 	UserId         string    `json:"user_id"`         // 用户ID
 	CreatedAt      time.Time `json:"created_at"`      // 创建时间
 	UploadedChunks []int     `json:"uploaded_chunks"` // 已上传的分片列表
-	// todo:文件md5，前端传过来即可，支持秒传
 }
 
-func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.FileHeader, dst string) serializer.Response {
-	// 获取用户上传文件并保存到本地
+func (service *ChunkInitService) InitChunkUpload(userId string) serializer.Response {
 	var userStore model.FileStore
 	var err error
 
-	// 前端只需要传文件名和大小，文件目录，不需要传文件内容,md5值
+	// 前端只需要传文件名/大小/目录，不需要传文件内容（真实内容会在分片上传接口传输）
 	// 这里只是为了检查用户存储空间是否足够
 	// 真实的文件内容会在分片上传时传输
 	// 检查用户存储空间是否足够
 
 	// 检查添加文件大小后当前大小是否超过最大限制
 	var isExceed bool
-	if isExceed, err = checkIfFileSizeExceedsVolum(&userStore, userId, file.Size); err != nil {
+	if isExceed, err = checkIfFileSizeExceedsVolum(&userStore, userId, service.FileSize); err != nil {
 		logger.Log().Error("[FileUploadService.UploadFile] 检查用户容量失败: ", err)
 		return serializer.DBErr("", err)
 	}
@@ -75,8 +75,8 @@ func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.
 	// 	})
 	// }
 
-	// 计算分片数
-	totalChunks := int((file.Size + ChunkSize - 1) / ChunkSize)
+	// 计算分片数（chunk_number 使用 1..totalChunks）
+	totalChunks := int((service.FileSize + ChunkSize - 1) / ChunkSize)
 
 	// 生成上传任务ID
 	uploadId := uuid.New().String()
@@ -84,8 +84,8 @@ func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.
 	// 创建分片上传信息
 	uploadInfo := ChunkUploadInfo{
 		UploadId:       uploadId,
-		FileName:       file.Filename,
-		FileSize:       file.Size,
+		FileName:       service.FileName,
+		FileSize:       service.FileSize,
 		ChunkSize:      ChunkSize,
 		// 文件md5
 		TotalChunks:    totalChunks,
@@ -105,7 +105,7 @@ func (service *ChunkInitService) InitChunkUpload(userId string, file *multipart.
 		"upload_id":    uploadId,
 		"chunk_size":   ChunkSize,
 		"total_chunks": totalChunks,
-		"file_size":    file.Size,
+		"file_size":    service.FileSize,
 	}
 
 	return serializer.Success(response)

@@ -39,7 +39,8 @@ func (service *FileChunkUploadService) UploadChunk(userId string, chunkFile *mul
 	}
 
 	// 3. 验证分片序号
-	if service.ChunkNumber < 0 || service.ChunkNumber > uploadInfo.TotalChunks {
+	// chunk_number 采用 1..total_chunks（与合并逻辑一致）
+	if service.ChunkNumber < 1 || service.ChunkNumber > uploadInfo.TotalChunks {
 		return serializer.ParamsErr("InvalidChunkNumber", nil)
 	}
 

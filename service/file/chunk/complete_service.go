@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"go-cloud-disk/cache"
 	"go-cloud-disk/disk"
@@ -90,7 +91,9 @@ func (service *FileChunkCompleteService) CompleteChunkUpload(userId string) seri
 	if needUploadToCOS {
 		go func() {
 			// 复制合并文件路径，因为主协程会删除原文件
-			tempCopyPath := mergedFilePath + ".png"
+			ext := filepath.Ext(mergedFilePath)
+			base := strings.TrimSuffix(mergedFilePath, ext)
+			tempCopyPath := base + ".copy" + ext
 			if err := service.copyFile(mergedFilePath, tempCopyPath); err != nil {
 				logger.Log().Error("[FileChunkCompleteService.CompleteChunkUpload] 复制临时文件失败: ", err)
 				return

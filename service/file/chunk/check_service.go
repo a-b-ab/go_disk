@@ -68,8 +68,8 @@ func findMissingChunks(uploadedChunks []int, totalChunks int) []int {
 		uploadedMap[chunk] = true
 	}
 
-	// 找出缺失的分片
-	for i := 0; i < totalChunks; i++ {
+	// 找出缺失的分片（chunk_number 使用 1..totalChunks）
+	for i := 1; i <= totalChunks; i++ {
 		if !uploadedMap[i] {
 			missingChunks = append(missingChunks, i)
 		}

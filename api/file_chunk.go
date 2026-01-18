@@ -14,12 +14,9 @@ func InitChunkUpload(c *gin.Context) {
 		c.JSON(200, serializer.ErrorResponse(err))
 		return
 	}
-	userId, file, dst, err := getUploadFileParam(c)
-	if err != nil {
-		c.JSON(200, serializer.ErrorResponse(err))
-		return
-	}
-	res := service.InitChunkUpload(userId, file, dst)
+
+	userId := c.MustGet("UserId").(string)
+	res := service.InitChunkUpload(userId)
 	c.JSON(200, res)
 }
 
